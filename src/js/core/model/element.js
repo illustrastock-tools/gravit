@@ -1439,7 +1439,15 @@
      * @private
      */
     GElement.prototype._attachToParent = function (parent) {
-        if (parent._workspace || parent._scene) {
+        // Go up in hierarchy until we've found an element parent
+        while (parent) {
+            if (parent instanceof GElement) {
+                break;
+            }
+            parent = parent.getParent();
+        }
+
+        if (parent && (parent._workspace || parent._scene)) {
             this.accept(function (node) {
                 node._setWorkspace(parent._workspace);
                 if (node instanceof GElement) {
@@ -1454,7 +1462,15 @@
      * @private
      */
     GElement.prototype._detachFromParent = function (parent) {
-        if (parent._workspace || parent._scene) {
+        // Go up in hierarchy until we've found an element parent
+        while (parent) {
+            if (parent instanceof GElement) {
+                break;
+            }
+            parent = parent.getParent();
+        }
+
+        if (parent && (parent._workspace || parent._scene)) {
             this.accept(function (node) {
                 node._setWorkspace(null);
                 if (node instanceof GElement) {

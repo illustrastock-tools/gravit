@@ -6,17 +6,14 @@
      * @extends GShape
      * @constructor
      */
-    function GCompoundPath(evenOdd) {
+    function GCompoundPath() {
         GShape.call(this);
 
         this._setDefaultProperties(GCompoundPath.VisualProperties);
-        if (!!evenOdd) {
-            this.$evenodd = evenOdd;
-        }
 
         // Add paths
         this._paths = new GCompoundPath.Paths();
-        this.appendChild(this._paths);
+        this._paths._setParent(this);
         this._paths._removalAllowed = false;
     }
 
@@ -27,7 +24,7 @@
      */
     GCompoundPath.VisualProperties = {
         /** Even-Odd fill */
-        evenodd: false
+        evenodd: true
     };
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -111,6 +108,15 @@
         GNode.prototype._handleChange.call(this, change, args);
     };
 
+    /** @override */
+    GCompoundPath.Paths.prototype._attachToParent = function (parent) {
+        GElement.prototype._attachToParent.call(this, parent);
+    };
+
+    /** @override */
+    GCompoundPath.Paths._detachFromParent = function (parent) {
+        GElement.prototype._detachFromParent.call(this, parent);
+    };
 
     /** @override */
     GCompoundPath.Paths.prototype.toString = function () {
