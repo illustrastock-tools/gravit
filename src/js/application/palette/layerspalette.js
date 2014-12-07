@@ -482,27 +482,22 @@
 
             // Do some special handling for layers
             if (layerOrItem instanceof GLayer) {
-                // Add layer-type as data-attribute for custom styling
-                container.attr('data-layer-type', layerOrItem.getProperty('tp'));
-
-                // Don't add outline for guide layers
-                if (layerOrItem.getProperty('tp') !== GLayer.Type.Guide) {
-                    $('<span></span>')
-                        .addClass('layer-outline fa fa-' + (isOutlined ? 'circle-o' : 'circle'))
-                        .toggleClass('layer-default', !isOutlined)
-                        // TODO : I18N
-                        .attr('title', 'Toggle Outline')
-                        .on('click', function (evt) {
-                            evt.stopPropagation();
-                            if (!parentHidden) {
-                                // TODO : I18N
-                                GEditor.tryRunTransaction(layerOrItem, function () {
-                                    layerOrItem.setProperty('otl', !layerOrItem.getProperty('otl'));
-                                }, 'Toggle Layer Outline');
-                            }
-                        })
-                        .appendTo(container);
-                }
+                // Outline Marker
+                $('<span></span>')
+                    .addClass('layer-outline fa fa-' + (isOutlined ? 'circle-o' : 'circle'))
+                    .toggleClass('layer-default', !isOutlined)
+                    // TODO : I18N
+                    .attr('title', 'Toggle Outline')
+                    .on('click', function (evt) {
+                        evt.stopPropagation();
+                        if (!parentHidden) {
+                            // TODO : I18N
+                            GEditor.tryRunTransaction(layerOrItem, function () {
+                                layerOrItem.setProperty('otl', !layerOrItem.getProperty('otl'));
+                            }, 'Toggle Layer Outline');
+                        }
+                    })
+                    .appendTo(container);
 
                 var patternChange = function (evt, color) {
                     // TODO : I18N

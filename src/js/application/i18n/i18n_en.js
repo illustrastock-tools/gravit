@@ -18,7 +18,6 @@ ifLocale.setValues(GGroupAction, GLocale.Language.English, ["title"], ["Group Se
 ifLocale.setValues(GJoinPathsAction, GLocale.Language.English, ["title"], ["Join Path"]);
 ifLocale.setValues(GPlaceImageAction, GLocale.Language.English, ["title"], ["Place Image..."]);
 ifLocale.setValues(GInvertSelectionAction, GLocale.Language.English, ["title"], ["Invert Selection"]);
-ifLocale.setValues(GLayerTypeAction, GLocale.Language.English, ["title"], ["%name% Layer"]);
 ifLocale.setValues(GNewProjectAction, GLocale.Language.English, ["title"], ["New Project..."]);
 ifLocale.setValues(GNewWindowAction, GLocale.Language.English, ["title"], ["New Window"]);
 ifLocale.setValues(GOpenProjectAction, GLocale.Language.English, ["title"], ["Open Project..."]);

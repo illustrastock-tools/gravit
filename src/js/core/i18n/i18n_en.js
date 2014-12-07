@@ -30,7 +30,7 @@ ifLocale.setValues(GFont, GLocale.Language.English, ["weight.thin", "weight.extr
 // Scene
 ifLocale.setValues(GEllipse, GLocale.Language.English, ["name"], ["Ellipse"]);
 ifLocale.setValues(GRectangle, GLocale.Language.English, ["name"], ["Rectangle"]);
-ifLocale.setValues(GLayer, GLocale.Language.English, ["name", "type.output", "type.draft", "type.guide"], ["Layer", "Output", "Draft", "Guide"]);
+ifLocale.setValues(GLayer, GLocale.Language.English, ["name"], ["Layer"]);
 ifLocale.setValues(GGroup, GLocale.Language.English, ["name"], ["Group"]);
 ifLocale.setValues(GScene, GLocale.Language.English, ["name"], ["Scene"]);
 ifLocale.setValues(GPolygon, GLocale.Language.English, ["name"], ["Polygon"]);

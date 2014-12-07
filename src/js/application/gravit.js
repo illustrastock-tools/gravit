@@ -257,11 +257,6 @@
             new GAddLayerAction(),
             new GDeleteLayerAction(),
 
-            new GLayerTypeAction(GLayer.Type.Output),
-            new GLayerTypeAction(GLayer.Type.Draft),
-            new GLayerTypeAction(GLayer.Type.Guide),
-
-
             // View
             new GOriginalViewAction(),
             new GFitSelectionAction(),
