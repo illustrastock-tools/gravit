@@ -166,13 +166,9 @@
      * @private
      */
     GEditorWidget.prototype._dropHitFilter = function (element) {
-        // Let DND fall-through locked, non-active draft-layers and through guide layers
-        if (element instanceof GLayer) {
-            if (element.getProperty('tp') === GLayer.Type.Guide) {
-                return false;
-            } else if (element.getProperty('tp') === GLayer.Type.Draft && element.hasFlag(GElement.Flag.Locked) && !element.hasFlag(GNode.Flag.Active)) {
-                return false;
-            }
+        // Ignore transient elements
+        if (element.hasFlag(GNode.Flag.Transient)) {
+            return false;
         }
 
         return true;

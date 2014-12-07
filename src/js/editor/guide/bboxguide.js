@@ -131,7 +131,7 @@
         }.bind(this);
 
         this._scene.accept(function (node) {
-            if (node instanceof GItem && !(node.getParent() instanceof GItem)) {
+            if (node instanceof GItem && !(node.getParent() instanceof GItem) && !node.hasFlag(GNode.Flag.Transient)) {
                 _snap(node);
             }
         });

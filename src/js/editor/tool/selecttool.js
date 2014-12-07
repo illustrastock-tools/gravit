@@ -804,13 +804,9 @@
      * @private
      */
     GSelectTool.prototype._selectFilter = function (element) {
-        // If element is a layer and it is not an output layer and
-        // it is locked and not active then we filter it out calling
-        // ourself to be "super smart"
-        if (element instanceof GLayer) {
-            if (element.getProperty('tp') !== GLayer.Type.Output && element.hasFlag(GElement.Flag.Locked) && !element.hasFlag(GNode.Flag.Active)) {
-                return false;
-            }
+        // Ignore transient elements
+        if (element.hasFlag(GNode.Flag.Transient)) {
+            return false;
         }
 
         return true;
