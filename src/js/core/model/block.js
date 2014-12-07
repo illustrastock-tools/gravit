@@ -18,15 +18,18 @@
      * The visual properties of a block with their default values
      */
     GBlock.VisualProperties = {
-        visible: true
+        /** Visibility */
+        vis: true
     };
 
     /**
      * The meta properties of a block with their default values
      */
     GBlock.MetaProperties = {
+        /** Name */
         name: null,
-        locked: false
+        /** Locked status */
+        lck: false
     };
 
     /** @override */
@@ -90,8 +93,8 @@
             var propertyArgs = args;
 
             // React on various known property changes
-            if (propertyArgs.properties.indexOf('visible') >= 0) {
-                var isVisible = this.getProperty('visible');
+            if (propertyArgs.properties.indexOf('vis') >= 0) {
+                var isVisible = this.getProperty('vis');
 
                 // Save our old paint bbox if we're getting hidden
                 var oldPaintBBox = !isVisible ? this.getPaintBBox() : null;
@@ -120,8 +123,8 @@
                 } else {
                     this._requestInvalidationArea(oldPaintBBox);
                 }
-            } else if (propertyArgs.properties.indexOf('locked') >= 0) {
-                var isLocked = this.getProperty('locked');
+            } else if (propertyArgs.properties.indexOf('lck') >= 0) {
+                var isLocked = this.getProperty('lck');
 
                 // Change locked flag of this and all elemental children
                 this.accept(function (node) {

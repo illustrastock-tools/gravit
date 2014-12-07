@@ -735,7 +735,7 @@
                 if (node) {
                     if (node instanceof GBlock) {
                         if (this.style('display').value == 'none' || this.style('visibility').value == 'hidden') {
-                            element.setProperty('visible', false);
+                            element.setProperty('vis', false);
                         }
                     }
 

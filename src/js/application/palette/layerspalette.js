@@ -356,8 +356,8 @@
                 }
 
                 // Query information
-                parentHidden = p.getProperty('visible') === false || parentHidden;
-                parentLocked = p.getProperty('locked') === true || parentLocked;
+                parentHidden = p.getProperty('vis') === false || parentHidden;
+                parentLocked = p.getProperty('lck') === true || parentLocked;
 
                 if (p instanceof GLayer) {
                     parentOutlined = p.getProperty('otl') === true || parentOutlined;
@@ -366,8 +366,8 @@
                 itemLevel += 1;
             }
 
-            var isHidden = parentHidden || layerOrItem.getProperty('visible') === false;
-            var isLocked = parentLocked || layerOrItem.getProperty('locked') === true;
+            var isHidden = parentHidden || layerOrItem.getProperty('vis') === false;
+            var isLocked = parentLocked || layerOrItem.getProperty('lck') === true;
             var isOutlined = parentOutlined || (layerOrItem instanceof GLayer && layerOrItem.getProperty('otl'));
 
             // Gather a reference to the element container
@@ -436,7 +436,7 @@
                     if (!parentLocked) {
                         // TODO : I18N
                         GEditor.tryRunTransaction(layerOrItem, function () {
-                            layerOrItem.setProperty('locked', !layerOrItem.getProperty('locked'));
+                            layerOrItem.setProperty('lck', !layerOrItem.getProperty('lck'));
                         }, 'Toggle Layer Locked');
                     }
                 })
@@ -450,7 +450,7 @@
                 .on('click', function (evt) {
                     evt.stopPropagation();
                     if (!parentHidden) {
-                        var show = !layerOrItem.getProperty('visible');
+                        var show = !layerOrItem.getProperty('vis');
 
                         // Remove highlight when made invisible
                         if (!show) {
@@ -459,7 +459,7 @@
 
                         // TODO : I18N
                         GEditor.tryRunTransaction(layerOrItem, function () {
-                            layerOrItem.setProperty('visible', show);
+                            layerOrItem.setProperty('vis', show);
                         }, 'Toggle Layer Visibility');
 
                         // Show highlight when made visible
