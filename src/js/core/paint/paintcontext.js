@@ -60,7 +60,7 @@
      * The current outline color for the guides
      * @type GColor
      */
-    GPaintContext.prototype.guideOutlineColor = new GRGBColor([46, 204, 64]);
+    GPaintContext.prototype.guideOutlineColor = new GRGBColor([231, 76, 60]);
 
     /**
      * Returns whether the paint context is in outline/wireframe mode or not
