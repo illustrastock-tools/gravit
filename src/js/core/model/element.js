@@ -26,10 +26,16 @@
         Hidden: 1 << 21,
 
         /**
-         * Defines a flag for being locked
+         * Defines a flag for being partially locked
          * @type {Number}
          */
-        Locked: 1 << 22,
+        PartialLocked: 1 << 22,
+
+        /**
+         * Defines a flag for being full locked
+         * @type {Number}
+         */
+        FullLocked: 1 << 23,
 
         /**
          * Defines a flag for no painting which
@@ -37,7 +43,7 @@
          * behave as being visible just contents
          * won't be painted at all
          */
-        NoPaint: 1 << 23
+        NoPaint: 1 << 24
     };
 
     /**

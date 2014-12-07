@@ -829,7 +829,7 @@
         // By default, transformation can only be applied if it is valid,
         // the element supports transforming and the element is not locked
         return this._transform && !this._transform.isIdentity() &&
-            element.hasMixin(GElement.Transform) && !element.hasFlag(GElement.Flag.Locked);
+            element.hasMixin(GElement.Transform) && !element.hasFlag(GElement.Flag.PartialLocked);
     };
 
     /**

@@ -15,6 +15,14 @@
     GObject.inheritAndMix(GBlock, GElement, [GNode.Properties, GNode.Store]);
 
     /**
+     * @enum
+     */
+    GBlock.LockType = {
+        Partial: 'P',
+        Full: 'F'
+    };
+
+    /**
      * The visual properties of a block with their default values
      */
     GBlock.VisualProperties = {
@@ -28,8 +36,8 @@
     GBlock.MetaProperties = {
         /** Name */
         name: null,
-        /** Locked status */
-        lck: false
+        /** Locked type (GBlock.LockType) */
+        lkt: null
     };
 
     /** @override */
@@ -58,7 +66,7 @@
      * @return {GLayer}
      */
     GBlock.prototype.getOwnerLayer = function () {
-        for (var p = this.getParent(); p !== null; p = p.getParent()) {
+        for (var p = this.getParent(); p !== null; p = p.getParent()) {
             if (p instanceof GLayer) {
                 return p;
             }
@@ -72,7 +80,7 @@
      */
     GBlock.prototype.getRootLayer = function () {
         var lastLayer = null;
-        for (var p = this.getParent(); p !== null; p = p.getParent()) {
+        for (var p = this.getParent(); p !== null; p = p.getParent()) {
             if (p instanceof GLayer) {
                 lastLayer = p;
             }
@@ -93,52 +101,76 @@
             var propertyArgs = args;
 
             // React on various known property changes
-            if (propertyArgs.properties.indexOf('vis') >= 0) {
-                var isVisible = this.getProperty('vis');
+            var visibilityChange = propertyArgs.properties.indexOf('vis') >= 0;
+            var lockedChange = propertyArgs.properties.indexOf('lkt') >= 0;
 
-                // Save our old paint bbox if we're getting hidden
-                var oldPaintBBox = !isVisible ? this.getPaintBBox() : null;
-
-                // Change hidden flag of this and all elemental children
+            if (visibilityChange || lockedChange) {
                 this.accept(function (node) {
                     if (node instanceof GElement) {
-                        if (isVisible) {
-                            node.removeFlag(GElement.Flag.Hidden);
-                        } else {
-                            node.setFlag(GElement.Flag.Hidden);
+                        if (visibilityChange) {
+                            this._updateElementVisibility(node);
                         }
-                        node._requestInvalidation();
-                    }
-                });
 
-                // Deliver child geometry update to parent
-                if (this.getParent()) {
-                    this.getParent()._notifyChange(GElement._Change.ChildGeometryUpdate, this);
-                }
-
-                // Request a repaint of either old paint bbox if getting hidden or from
-                // the current paint bbox if getting visible
-                if (isVisible) {
-                    this._handleChange(GElement._Change.InvalidationRequest);
-                } else {
-                    this._requestInvalidationArea(oldPaintBBox);
-                }
-            } else if (propertyArgs.properties.indexOf('lck') >= 0) {
-                var isLocked = this.getProperty('lck');
-
-                // Change locked flag of this and all elemental children
-                this.accept(function (node) {
-                    if (node instanceof GElement) {
-                        if (isLocked) {
-                            node.setFlag(GElement.Flag.Locked);
-                        } else {
-                            node.removeFlag(GElement.Flag.Locked);
+                        if (lockedChange) {
+                            this._updateElementLock(node);
                         }
                     }
-                });
+                }.bind(this));
             }
         }
         GElement.prototype._handleChange.call(this, change, args);
+    };
+
+    /**
+     * @param {GElement} element
+     * @private
+     */
+    GBlock.prototype._updateElementVisibility = function (element) {
+        var isVisible = this.getProperty('vis');
+
+        if (isVisible && element instanceof GBlock) {
+            isVisible = element.getProperty('vis');
+        }
+
+        if (isVisible) {
+            element.removeFlag(GElement.Flag.Hidden);
+
+            // Making something visible needs to invalidate parent's geometry
+            if (element.getParent()) {
+                element.getParent()._notifyChange(GElement._Change.ChildGeometryUpdate, element);
+            }
+
+            element._requestInvalidation();
+        } else {
+            element._requestInvalidation();
+            element.setFlag(GElement.Flag.Hidden);
+        }
+    };
+
+    /**
+     * @param {GElement} element
+     * @private
+     */
+    GBlock.prototype._updateElementLock = function (element) {
+        var lockType = this.getProperty('lkt');
+
+        if (!lockType && element instanceof GBlock) {
+            lockType = element.getProperty('lkt');
+        }
+
+        if (lockType) {
+            switch (lockType) {
+                case GBlock.LockType.Full:
+                    element.setFlag(GElement.Flag.FullLocked);
+                // fall-through intended
+                case GBlock.LockType.Partial:
+                    element.setFlag(GElement.Flag.PartialLocked);
+                    break;
+            }
+        } else {
+            element.removeFlag(GElement.Flag.PartialLocked);
+            element.removeFlag(GElement.Flag.FullLocked);
+        }
     };
 
     _.GBlock = GBlock;

@@ -48,12 +48,10 @@
     /**
      * Called to store a given node into a blob
      * @param {GNode} node the node to be stored
-     * @param {Boolean} [incTransient] if set to true, includes
-     * nodes with transient flag set, otherwise they'll be ignored (default)
      * @returns {*} the stored blob for the node or null on failure
      */
-    GNode.store = function (node, incTransient) {
-        if (node.hasMixin(GNode.Store) && (!node.hasFlag(GNode.Flag.Transient) || incTransient)) {
+    GNode.store = function (node) {
+        if (node.hasMixin(GNode.Store)) {
             var blob = {
                 '@': GNode._nodeClassToNameMap[GObject.getTypeId(node)]
             };

@@ -316,7 +316,7 @@
             this._updateLayer(event.node);
         } else if (event.node instanceof GItem && event.flag === GNode.Flag.Selected) {
             this._updateLayer(event.node);
-        } else if ((event.node instanceof GLayer || event.node instanceof GItem) && (event.flag === GElement.Flag.Hidden || event.flag === GElement.Flag.Locked)) {
+        } else if ((event.node instanceof GLayer || event.node instanceof GItem) && (event.flag === GElement.Flag.Hidden || event.flag === GElement.Flag.PartialLocked || event.flag === GElement.Flag.FullLocked)) {
             this._updateLayer(event.node);
         }
     };
@@ -346,7 +346,7 @@
             // Iterate parents up and collect some information
             var itemLevel = 0;
             var parentHidden = false;
-            var parentLocked = false;
+            var parentLockType = null;
             var parentOutlined = false;
 
             for (var p = layerOrItem.getParent(); p !== null; p = p.getParent()) {
@@ -356,8 +356,20 @@
                 }
 
                 // Query information
-                parentHidden = p.getProperty('vis') === false || parentHidden;
-                parentLocked = p.getProperty('lck') === true || parentLocked;
+                if (p instanceof GBlock) {
+                    parentHidden = p.getProperty('vis') === false || parentHidden;
+
+                    var lockType = p.getProperty('lkt');
+                    if (lockType) {
+                        if (!parentLockType) {
+                            parentLockType = lockType;
+                        } else {
+                            if (lockType === GBlock.LockType.Full) {
+                                parentLockType = lockType;
+                            }
+                        }
+                    }
+                }
 
                 if (p instanceof GLayer) {
                     parentOutlined = p.getProperty('otl') === true || parentOutlined;
@@ -367,7 +379,7 @@
             }
 
             var isHidden = parentHidden || layerOrItem.getProperty('vis') === false;
-            var isLocked = parentLocked || layerOrItem.getProperty('lck') === true;
+            var lockType = parentLockType || layerOrItem.getProperty('lkt');
             var isOutlined = parentOutlined || (layerOrItem instanceof GLayer && layerOrItem.getProperty('otl'));
 
             // Gather a reference to the element container
@@ -427,17 +439,27 @@
 
             // Prepend locked and visibility markers
             $('<span></span>')
-                .addClass('layer-lock fa fa-fw fa-' + (isLocked ? 'lock' : 'unlock'))
-                .toggleClass('layer-default', !isLocked)
+                .addClass('layer-lock fa fa-fw fa-' + (!lockType ? 'unlock' : (lockType === GBlock.LockType.Full ? 'ban' : 'lock')))
+                .toggleClass('layer-default', !lockType)
                 // TODO : I18N
                 .attr('title', 'Toggle Lock')
                 .on('click', function (evt) {
                     evt.stopPropagation();
-                    if (!parentLocked) {
+                    if (!parentLockType) {
                         // TODO : I18N
                         GEditor.tryRunTransaction(layerOrItem, function () {
-                            layerOrItem.setProperty('lck', !layerOrItem.getProperty('lck'));
-                        }, 'Toggle Layer Locked');
+                            var lockType = layerOrItem.getProperty('lkt');
+
+                            if (!lockType) {
+                                lockType = GBlock.LockType.Partial;
+                            } else if (lockType === GBlock.LockType.Partial) {
+                                lockType = GBlock.LockType.Full;
+                            } else if (lockType === GBlock.LockType.Full) {
+                                lockType = null;
+                            }
+
+                            layerOrItem.setProperty('lkt', lockType);
+                        }, 'Toggle Lock');
                     }
                 })
                 .prependTo(container);
@@ -460,7 +482,7 @@
                         // TODO : I18N
                         GEditor.tryRunTransaction(layerOrItem, function () {
                             layerOrItem.setProperty('vis', show);
-                        }, 'Toggle Layer Visibility');
+                        }, 'Toggle Visibility');
 
                         // Show highlight when made visible
                         if (show) {

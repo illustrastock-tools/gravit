@@ -804,8 +804,8 @@
      * @private
      */
     GSelectTool.prototype._selectFilter = function (element) {
-        // Ignore transient elements
-        if (element.hasFlag(GNode.Flag.Transient)) {
+        // Ignore fully locked elements
+        if (element.hasFlag(GElement.Flag.FullLocked)) {
             return false;
         }
 

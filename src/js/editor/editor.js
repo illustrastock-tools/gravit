@@ -613,7 +613,7 @@
                 // now delete
                 for (var i = 0; i < orderedSelection.length; ++i) {
                     var selElement = orderedSelection[i];
-                    if (selElement instanceof GItem && !selElement.hasFlag(GElement.Flag.Locked)) {
+                    if (selElement instanceof GItem && !selElement.hasFlag(GElement.Flag.PartialLocked)) {
                         var elemEditor = GElementEditor.getEditor(selElement);
                         if (elemEditor && elemEditor.isDeletePartsAllowed()) {
                             elemEditor.deletePartsSelected();
@@ -939,7 +939,7 @@
                                 }
                             } else {
                                 // Avoid transform when locked
-                                if (selectionElement.hasFlag(GElement.Flag.Locked)) {
+                                if (selectionElement.hasFlag(GElement.Flag.PartialLocked)) {
                                     elementToApplyTransform = null;
                                 }
                             }

@@ -131,7 +131,7 @@
         }.bind(this);
 
         this._scene.accept(function (node) {
-            if (node instanceof GItem && !(node.getParent() instanceof GItem) && !node.hasFlag(GNode.Flag.Transient)) {
+            if (node instanceof GItem && !(node.getParent() instanceof GItem) && !node.hasFlag(GElement.Flag.FullLocked)) {
                 _snap(node);
             }
         });
