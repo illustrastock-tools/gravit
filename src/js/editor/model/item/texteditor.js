@@ -301,6 +301,14 @@
             height = sceneBBox.getHeight() + 'px';
         }
 
+        var parentOffset = this._inlineEditor.parent().offset();
+        if (parentOffset && parentOffset.top) {
+            top += parentOffset.top;
+        }
+        if (parentOffset && parentOffset.left) {
+            left += parentOffset.left;
+        }
+
         this._inlineEditor
             .css({
                 'width': width,
