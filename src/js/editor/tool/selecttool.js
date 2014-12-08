@@ -282,7 +282,7 @@
                     if (selection[i] instanceof GElement) {
                         element = selection[i];
                         hitRes = element.hitTest(event.client, this._view.getWorldTransform(), null,
-                            stacked, -1, GEditor.options.pickDistance, true);
+                            stacked, -1, GEditor.options.pickDistance, this._editor.hasSelectionDetail());
                     }
                 }
             }
