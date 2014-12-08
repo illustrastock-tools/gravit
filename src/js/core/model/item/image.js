@@ -186,7 +186,7 @@
         } else if (change === GNode._Change.Restore) {
             this.restoreProperties(args, GImage.VisualProperties);
             this._updateImage();
-        } else  if (change == GNode._Change.AfterPropertiesChange) {
+        } else if (change == GNode._Change.AfterPropertiesChange) {
             if (args.properties.indexOf('url') >= 0) {
                 this._updateImage();
             }
@@ -204,37 +204,57 @@
         GShape.prototype._paintFill.call(this, context);
 
         if (!context.configuration.isOutline(context)) {
-            // Apply our transformation (if any) before the canvas transformation
-            var canvasTransform = context.canvas.getTransform(true);
-            if (this.$trf) {
-                var tmpTransform = canvasTransform.preMultiplied(this.$trf);
-                context.canvas.setTransform(tmpTransform);
-            }
+            this._paintImage(context.canvas, null, null);
+        }
+    };
 
+    /** @override */
+    GImage.prototype._paintStyleSeparate = function (context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects) {
+        // Special case: if there's no fill and stroke and no effects and we have an image, we'll return
+        // that one instead of creating a new, separate canvas to save some performance / memory
+        if (this._status === GImage.ImageStatus.Loaded && this._image && !this.hasStyleFill() && !this.hasStyleBorder() && !hasEffects) {
+            this._paintCompositedWithBackground(context.canvas, this._paintImage.bind(this));
+        } else {
+            GShape.prototype._paintStyleSeparate.call(this, context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas);
+        }
+    };
+
+    /**
+     * @private
+     */
+    GImage.prototype._paintImage = function (canvas, opacity, blendMode) {
+        // Apply our transformation (if any) before the canvas transformation
+        var canvasTransform = canvas.getTransform(true);
+        if (this.$trf) {
+            var tmpTransform = canvasTransform.preMultiplied(this.$trf);
+            canvas.setTransform(tmpTransform);
+        }
+
+        try {
             // Paint depending on our status
             switch (this._status) {
                 case GImage.ImageStatus.Loaded:
-                    context.canvas.drawImage(this._image, 0, 0, false, 1);
+                    canvas.drawImage(this._image, 0, 0, false, opacity, blendMode);
                     break;
 
                 default:
                     var width = this._getWidth();
                     var height = this._getHeight();
 
-                    context.canvas.fillRect(0, 0, width, height, GImage.NO_IMAGE_BACKGROUND);
+                    canvas.fillRect(0, 0, width, height, GImage.NO_IMAGE_BACKGROUND);
 
                     // TODO : Paint some loading indicator!?
 
                     if (this._status === GImage.ImageStatus.Error) {
                         // Paint red cross
-                        context.canvas.strokeLine(0, 0, width, height, 2, GImage.NO_IMAGE_ERROR_STROKE);
-                        context.canvas.strokeLine(width, 0, 0, height, 2, GImage.NO_IMAGE_ERROR_STROKE);
+                        canvas.strokeLine(0, 0, width, height, 2, GImage.NO_IMAGE_ERROR_STROKE);
+                        canvas.strokeLine(width, 0, 0, height, 2, GImage.NO_IMAGE_ERROR_STROKE);
                     }
                     break;
             }
-
+        } finally {
             // Reset original transform
-            context.canvas.setTransform(canvasTransform);
+            canvas.setTransform(canvasTransform);
         }
     };
 

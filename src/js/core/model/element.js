@@ -351,6 +351,7 @@
             this._paintStyleFillLayer(context, contentPaintBBox, styleLayers);
         } else if (this.$_stop > 0.0) {
             var orderedEffects = this._effects ? this._effects.getLayersEffects(styleLayers, true) : null;
+            var hasEffects = false;
 
             // If we have any pre- or post-effect then we'll be creating an effect canvas here
             // to be re-used by every effect renderer
@@ -359,6 +360,7 @@
                 for (var i = 0; i < orderedEffects.length; ++i) {
                     if (orderedEffects[i]) {
                         for (var j = 0; j < orderedEffects[i].length; ++j) {
+                            hasEffects = true;
                             var effectType = orderedEffects[i][j].getEffectType();
                             if (effectType === GEffect.Type.PreEffect || effectType === GEffect.Type.PostEffect) {
                                 effectCanvas = this._createStyleCanvas(context, contentPaintBBox);
@@ -369,39 +371,62 @@
             }
 
             if (this.$_stop !== 1.0 || this.$_sbl !== GPaintCanvas.BlendMode.Normal) {
-                // We need to paint on a separate canvas here
-                var styleCanvas = this._createStyleCanvas(context, contentPaintBBox);
-                var sourceCanvas = context.pushCanvas(styleCanvas);
-                try {
-                    this._paintStyleFillLayer(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas);
-
-                    if (this.$_sbl === 'm' || this.$_sbl === '!m') {
-                        var area = this._getStyleMaskClipArea();
-                        if (area) {
-                            sourceCanvas.clipRect(area.getX(), area.getY(), area.getWidth(), area.getHeight());
-                        }
-                        try {
-                            sourceCanvas.drawCanvas(styleCanvas, 0, 0, this.$_stop, this.$_sbl === 'm' ? GPaintCanvas.CompositeOperator.DestinationIn : GPaintCanvas.CompositeOperator.DestinationOut);
-                        } finally {
-                            if (area) {
-                                sourceCanvas.resetClip();
-                            }
-                        }
-                    } else {
-                        sourceCanvas.drawCanvas(styleCanvas, 0, 0, this.$_stop, this.$_sbl);
-                    }
-
-                    styleCanvas.finish();
-                } finally {
-                    context.popCanvas();
-                }
+                this._paintStyleSeparate(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects);
             } else {
-                this._paintStyleFillLayer(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas);
+                this._paintStyleFillLayer(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects);
             }
         }
 
         if (effectCanvas) {
             effectCanvas.finish();
+        }
+    };
+
+    /**
+     * Called to paint with style on a separate canvas
+     * @param {GPaintContext} context the context to be used for drawing
+     * @param {GRect} contentPaintBBox the source bbox used for drawing
+     * @param {Array<String>} the style layers
+     * @param {Array} orderedEffects the ordered effects for all layers
+     * @param {GPaintCanvas} effectCanvas an effect canvas if there're any pre/post effects
+     * @param {Boolean} hasEffects whether there're any effects available or not
+     */
+    GElement.Stylable.prototype._paintStyleSeparate = function (context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects) {
+        var styleCanvas = this._createStyleCanvas(context, contentPaintBBox);
+        var sourceCanvas = context.pushCanvas(styleCanvas);
+        try {
+            this._paintStyleFillLayer(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects);
+            this._paintCompositedWithBackground(sourceCanvas, function (background, opacity, blendMode) {
+                background.drawCanvas(styleCanvas, 0, 0, opacity, blendMode);
+            });
+            styleCanvas.finish();
+        } finally {
+            context.popCanvas();
+        }
+    };
+
+    /**
+     * Called to paint the style composited into the background
+     * @param {GPaintCanvas} background the background canvas to composite into
+     * @param {Function} callback the callback to composite retrieving background canvas,
+     * opacity and blendMode as parameters
+     */
+    GElement.Stylable.prototype._paintCompositedWithBackground = function (background, callback) {
+        if (this.$_sbl === 'm' || this.$_sbl === '!m') {
+            var area = this._getStyleMaskClipArea();
+            if (area) {
+                background.clipRect(area.getX(), area.getY(), area.getWidth(), area.getHeight());
+            }
+
+            try {
+                callback(background, this.$_stop, this.$_sbl === 'm' ? GPaintCanvas.CompositeOperator.DestinationIn : GPaintCanvas.CompositeOperator.DestinationOut);
+            } finally {
+                if (area) {
+                    background.resetClip();
+                }
+            }
+        } else {
+            callback(background, this.$_stop, this.$_sbl);
         }
     };
 
@@ -412,10 +437,11 @@
      * @param {Array<String>} the style layers
      * @param {Array} orderedEffects the ordered effects for all layers
      * @param {GPaintCanvas} effectCanvas an effect canvas if there're any pre/post effects
+     * @param {Boolean} hasEffects whether there're any effects available or not
      */
-    GElement.Stylable.prototype._paintStyleFillLayer = function (context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas) {
+    GElement.Stylable.prototype._paintStyleFillLayer = function (context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects) {
         if (context.configuration.isOutline(context)) {
-            this._paintStyleContent(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas);
+            this._paintStyleContent(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects);
         } else {
             var fillEffects = orderedEffects ? orderedEffects[styleLayers && styleLayers.length ? styleLayers.length : 0] : null;
             if (this.$_sfop !== 1.0 || fillEffects) {
@@ -423,7 +449,7 @@
                 var fillCanvas = this._createStyleCanvas(context, contentPaintBBox);
                 var sourceCanvas = context.pushCanvas(fillCanvas);
                 try {
-                    this._paintStyleContent(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas);
+                    this._paintStyleContent(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects);
 
                     if (fillEffects) {
                         this._paintWithEffects(fillCanvas, context.getRootCanvas(), sourceCanvas, this.$_sfop, fillEffects, effectCanvas);
@@ -436,7 +462,7 @@
                     context.popCanvas();
                 }
             } else if (this.$_sfop > 0.0) {
-                this._paintStyleContent(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas);
+                this._paintStyleContent(context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects);
             }
         }
     };
@@ -448,8 +474,9 @@
      * @param {Array<String>} the style layers
      * @param {Array} orderedEffects the ordered effects for all layers
      * @param {GPaintCanvas} effectCanvas an effect canvas if there're any pre/post effects
+     * @param {Boolean} hasEffects whether there're any effects available or not
      */
-    GElement.Stylable.prototype._paintStyleContent = function (context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas) {
+    GElement.Stylable.prototype._paintStyleContent = function (context, contentPaintBBox, styleLayers, orderedEffects, effectCanvas, hasEffects) {
         // By default we'll paint the style layers if there're any
         if (styleLayers && styleLayers.length) {
             var outlined = context.configuration.isOutline(context);
@@ -651,10 +678,12 @@
 
             if (change === GNode._Change.AfterPropertiesChange) {
                 var styleBlendModeIdx = args.properties.indexOf('_sbl');
-                var newBlendMode = args.values[styleBlendModeIdx];
-                var oldBlendMode = this.$_sbl;
-                if (styleBlendModeIdx >= 0 && newBlendMode === 'm' || newBlendMode === '!m' || oldBlendMode === 'm' || oldBlendMode === '!m') {
-                    this._requestInvalidationArea(this._getStyleMaskClipArea());
+                if (styleBlendModeIdx >= 0) {
+                    var oldBlendMode = args.values[styleBlendModeIdx];
+                    var newBlendMode = this.$_sbl;
+                    if (styleBlendModeIdx >= 0 && newBlendMode === 'm' || newBlendMode === '!m' || oldBlendMode === 'm' || oldBlendMode === '!m') {
+                        this._requestInvalidationArea(this._getStyleMaskClipArea());
+                    }
                 }
             }
         }

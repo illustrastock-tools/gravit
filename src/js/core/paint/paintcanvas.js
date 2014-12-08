@@ -915,7 +915,7 @@
 
     /**
      * Draw an image or canvas
-     * @param {Image|GPaintCanvas} image the image or canvas to be drawn
+     * @param {GPaintCanvas|Image|HTMLImageElement|HTMLCanvasElement} image the image or canvas to be drawn
      * @param {Number} [x] the x-position of the image, defaults to zero
      * @param {Number} [y] the y-position of the image, defaults to zero
      * @param {Boolean} [noSmooth] if set to true, will render pixelated without smoothing. Defaults to false.
