@@ -266,16 +266,26 @@
         this._pathes = [];
         this._points = [];
         for (var i = 0; i < elements.length; ++i) {
-            if (elements[i] instanceof GPath) {
+            if ((elements[i] instanceof GPath) || (elements[i] instanceof GCompoundPath)) {
                 var path = elements[i];
+                this._pathes.push(path);
 
-                this._pathes.push(elements[i]);
+                var _fillPoints = function (path) {
+                    for (var ap = path.getAnchorPoints().getFirstChild(); ap !== null; ap = ap.getNext()) {
+                        if (ap.hasFlag(GNode.Flag.Selected)) {
+                            this._points.push(ap);
+                        }
+                    }
+                }.bind(this);
 
-                for (var ap = path.getAnchorPoints().getFirstChild(); ap !== null; ap = ap.getNext()) {
-                    if (ap.hasFlag(GNode.Flag.Selected)) {
-                        this._points.push(ap);
+                if (path instanceof GPath) {
+                    _fillPoints(path);
+                } else { // path instanceof GCompoundPath
+                    for (var subPath = path.getPaths().getFirstChild(); subPath !== null; subPath = subPath.getNext()) {
+                        _fillPoints(subPath);
                     }
                 }
+
             }
         }
 
@@ -312,8 +322,10 @@
      */
     GPathProperties.prototype._afterFlagChange = function (event) {
         if (event.flag === GNode.Flag.Selected && event.node instanceof GPathBase.AnchorPoint) {
-            var path = event.node.getParent().getParent();
-            if (path && this._pathes.indexOf(path) >= 0) {
+            // check both path and compound path
+            var path = event.node.getParent() ? event.node.getParent().getParent() : null;
+            var cpath = path && path.getParent() && path.getParent().getParent() ? path.getParent().getParent() : null;
+            if (path && this._pathes.indexOf(path) >= 0 || cpath && this._pathes.indexOf(cpath) >= 0) {
                 if (event.set) {
                     this._points.push(event.node);
                 } else {
@@ -331,7 +343,14 @@
         // We'll always read properties of first path
         var path = this._pathes[0];
         this._panel.find('input[data-path-property="evenodd"]').prop('checked', path.getProperty('evenodd'));
-        this._panel.find('input[data-path-property="closed"]').prop('checked', path.getProperty('closed'));
+        if (path instanceof GPath) {
+            var elem = this._panel.find('input[data-path-property="closed"]');
+            elem.parent().css('display', '');
+            elem.prop('checked', path.getProperty('closed'));
+        } else { // path instanceof GCompoundPath
+            var elem = this._panel.find('input[data-path-property="closed"]');
+            elem.parent().css('display', 'none');
+        }
     };
 
     /**

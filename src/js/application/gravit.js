@@ -165,7 +165,6 @@
             // middle
             new GPolygonProperties(),
             new GPathProperties(),
-            new GCompoundPathProperties(),
             new GRectangleProperties(),
             new GEllipseProperties(),
             new GTextProperties(),
