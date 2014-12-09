@@ -1,48 +1,48 @@
 (function (_) {
     /**
      * The project sidebar
-     * @class GProjectSidebar
+     * @class GMediaSidebar
      * @extends GSidebar
      * @constructor
      */
-    function GProjectSidebar() {
+    function GMediaSidebar() {
         GSidebar.call(this);
     }
 
-    GObject.inherit(GProjectSidebar, GSidebar);
+    GObject.inherit(GMediaSidebar, GSidebar);
 
-    GProjectSidebar.ID = "project";
-    GProjectSidebar.TITLE = new GLocale.Key(GProjectSidebar, "title");
+    GMediaSidebar.ID = "media";
+    GMediaSidebar.TITLE = new GLocale.Key(GMediaSidebar, "title");
 
     /**
      * @type {JQuery}
      * @private
      */
-    GProjectSidebar.prototype._htmlElement = null;
+    GMediaSidebar.prototype._htmlElement = null;
 
     /**
      * @type {GProject}
      * @private
      */
-    GProjectSidebar.prototype._project = null;
+    GMediaSidebar.prototype._project = null;
 
     /** @override */
-    GProjectSidebar.prototype.getId = function () {
-        return GProjectSidebar.ID;
+    GMediaSidebar.prototype.getId = function () {
+        return GMediaSidebar.ID;
     };
 
     /** @override */
-    GProjectSidebar.prototype.getTitle = function () {
-        return GProjectSidebar.TITLE;
+    GMediaSidebar.prototype.getTitle = function () {
+        return GMediaSidebar.TITLE;
     };
 
     /** @override */
-    GProjectSidebar.prototype.getIcon = function () {
-        return '<span class="fa fa-fw" style="height: 1em; background: url(/assets/application/icon/icon_72x72.png) no-repeat center center/1em"></span>';
+    GMediaSidebar.prototype.getIcon = function () {
+        return '<span class="fa fa-fw fa-image"></span>';
     };
 
     /** @override */
-    GProjectSidebar.prototype.init = function (htmlElement) {
+    GMediaSidebar.prototype.init = function (htmlElement) {
         GSidebar.prototype.init.call(this, htmlElement);
 
         gApp.addEventListener(GApplication.ProjectEvent, this._projectEvent, this);
@@ -312,11 +312,11 @@
     };
 
     /** @override */
-    GProjectSidebar.prototype.isEnabled = function () {
+    GMediaSidebar.prototype.isEnabled = function () {
         return !!this._project;
     };
 
-    GProjectSidebar.prototype._projectEvent = function (event) {
+    GMediaSidebar.prototype._projectEvent = function (event) {
         if (event.type === GApplication.ProjectEvent.Type.Activated) {
             this._project = event.project;
             this._updateProperties();
@@ -330,7 +330,7 @@
     /**
      * @private
      */
-    GProjectSidebar.prototype._updateProperties = function () {
+    GMediaSidebar.prototype._updateProperties = function () {
         /*
         this._htmlElement.find('select[data-property="unit"]').val(scene.getProperty('unit'));
         this._htmlElement.find('input[data-property="unitSnap"]').prop('checked', scene.getProperty('unitSnap'));
@@ -350,9 +350,9 @@
     };
 
     /** @override */
-    GProjectSidebar.prototype.toString = function () {
-        return "[Object GProjectSidebar]";
+    GMediaSidebar.prototype.toString = function () {
+        return "[Object GMediaSidebar]";
     };
 
-    _.GProjectSidebar = GProjectSidebar;
+    _.GMediaSidebar = GMediaSidebar;
 })(this);

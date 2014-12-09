@@ -30,7 +30,7 @@
         );
 
         gravit.sidebars.push(
-            new GProjectSidebar()
+            new GMediaSidebar()
         );
 
         // Register default tools

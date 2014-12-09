@@ -61,7 +61,7 @@ ifLocale.setValues(GTransformPalette, GLocale.Language.English, ["title"], ["Tra
 ifLocale.setValues(GPropertiesPanel, GLocale.Language.English, ["title"], ["Properties"]);
 
 // Sidebar
-ifLocale.setValues(GProjectSidebar, GLocale.Language.English, ["title"], ["Project"]);
+ifLocale.setValues(GMediaSidebar, GLocale.Language.English, ["title"], ["Media"]);
 
 ifLocale.setValues(GApplication, GLocale.Language.English, [
         // Actions
