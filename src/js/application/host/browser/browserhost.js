@@ -108,10 +108,12 @@
         this._clipboardMimeTypes[mimeType] = content;
     };
 
+    var dummyCount = 0;
+
     /** @override */
     GBrowserHost.prototype.openDirectoryPrompt = function (done) {
         // Dummy
-        done('', 'dummy');
+        done('', 'dummy-' + (dummyCount++).toString());
     };
 
     /** @override */
