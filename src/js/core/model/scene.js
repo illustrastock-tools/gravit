@@ -123,9 +123,9 @@
     };
 
     /**
-     * Assigns a currently active layer, this may also switch
-     * the currently active page
-     * @param {GLayer} layer the layer made active
+     * Assigns a currently active laye
+     * @param {GLayer} layer the layer made active or null
+     * to deactivate any active layer
      */
     GScene.prototype.setActiveLayer = function (layer) {
         // Now activate the layer
@@ -135,7 +135,9 @@
             }
         });
 
-        layer.setFlag(GNode.Flag.Active);
+        if (layer) {
+            layer.setFlag(GNode.Flag.Active);
+        }
     };
 
     /**
