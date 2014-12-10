@@ -97,8 +97,6 @@
 
             sidebar.init(container);
 
-            this.setSidebarEnabled(sidebar.getId(), sidebar.isEnabled());
-
             this._sidebars.push({
                 container: container,
                 sidebar: sidebar
@@ -108,6 +106,9 @@
             sidebar.addEventListener(GView.UpdateEvent, function () {
                 this.setSidebarEnabled(sidebar.getId(), sidebar.isEnabled());
             }.bind(this));
+
+            // Make initial enabled update
+            this.setSidebarEnabled(sidebar.getId(), sidebar.isEnabled());
         }.bind(this);
 
         if (gravit.sidebars) {
