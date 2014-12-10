@@ -6,23 +6,67 @@
             family: 'Open Sans',
             category: GFont.Category.Serif,
             substitutes: [
-                {style: GFont.Style.Normal, weight: GFont.Weight.Light, url: 'assets/application/font/OpenSans-Light.ttf'},
-                {style: GFont.Style.Italic, weight: GFont.Weight.Light, url: 'assets/application/font/OpenSans-LightItalic.ttf'},
-                {style: GFont.Style.Normal, weight: GFont.Weight.Regular, url: 'assets/application/font/OpenSans-Regular.ttf'},
-                {style: GFont.Style.Italic, weight: GFont.Weight.Regular, url: 'assets/application/font/OpenSans-Italic.ttf'},
-                {style: GFont.Style.Normal, weight: GFont.Weight.SemiBold, url: 'assets/application/font/OpenSans-Semibold.ttf'},
-                {style: GFont.Style.Italic, weight: GFont.Weight.SemiBold, url: 'assets/application/font/OpenSans-SemiboldItalic.ttf'},
-                {style: GFont.Style.Normal, weight: GFont.Weight.Bold, url: 'assets/application/font/OpenSans-Bold.ttf'},
-                {style: GFont.Style.Italic, weight: GFont.Weight.Bold, url: 'assets/application/font/OpenSans-BoldItalic.ttf'},
-                {style: GFont.Style.Normal, weight: GFont.Weight.ExtraBold, url: 'assets/application/font/OpenSans-ExtraBold.ttf'},
-                {style: GFont.Style.Italic, weight: GFont.Weight.ExtraBold, url: 'assets/application/font/OpenSans-ExtraBoldItalic.ttf'}
+                {
+                    style: GFont.Style.Normal,
+                    weight: GFont.Weight.Light,
+                    url: 'assets/application/font/OpenSans-Light.ttf'
+                },
+                {
+                    style: GFont.Style.Italic,
+                    weight: GFont.Weight.Light,
+                    url: 'assets/application/font/OpenSans-LightItalic.ttf'
+                },
+                {
+                    style: GFont.Style.Normal,
+                    weight: GFont.Weight.Regular,
+                    url: 'assets/application/font/OpenSans-Regular.ttf'
+                },
+                {
+                    style: GFont.Style.Italic,
+                    weight: GFont.Weight.Regular,
+                    url: 'assets/application/font/OpenSans-Italic.ttf'
+                },
+                {
+                    style: GFont.Style.Normal,
+                    weight: GFont.Weight.SemiBold,
+                    url: 'assets/application/font/OpenSans-Semibold.ttf'
+                },
+                {
+                    style: GFont.Style.Italic,
+                    weight: GFont.Weight.SemiBold,
+                    url: 'assets/application/font/OpenSans-SemiboldItalic.ttf'
+                },
+                {
+                    style: GFont.Style.Normal,
+                    weight: GFont.Weight.Bold,
+                    url: 'assets/application/font/OpenSans-Bold.ttf'
+                },
+                {
+                    style: GFont.Style.Italic,
+                    weight: GFont.Weight.Bold,
+                    url: 'assets/application/font/OpenSans-BoldItalic.ttf'
+                },
+                {
+                    style: GFont.Style.Normal,
+                    weight: GFont.Weight.ExtraBold,
+                    url: 'assets/application/font/OpenSans-ExtraBold.ttf'
+                },
+                {
+                    style: GFont.Style.Italic,
+                    weight: GFont.Weight.ExtraBold,
+                    url: 'assets/application/font/OpenSans-ExtraBoldItalic.ttf'
+                }
             ]
         },
         {
             family: 'Source Sans Pro',
             category: GFont.Category.Serif,
             substitutes: [
-                {style: GFont.Style.Normal, weight: GFont.Weight.Regular, url: 'assets/application/font/SourceSansPro-Regular.ttf'}
+                {
+                    style: GFont.Style.Normal,
+                    weight: GFont.Weight.Regular,
+                    url: 'assets/application/font/SourceSansPro-Regular.ttf'
+                }
             ]
         }
     ];
@@ -242,12 +286,6 @@
      * @private
      */
     GApplication.prototype._activeProject = null;
-
-    /**
-     * @type {number}
-     * @private
-     */
-    GApplication.prototype._documentUntitledCount = 0;
 
     /**
      * @type {Array<GDocument>}
@@ -480,11 +518,67 @@
     };
 
     /**
+     * Removes a project and all of it's documents
+     * @param {GProject} project
+     */
+    GApplication.prototype.removeProject = function (project) {
+        // If project is the active one, try to activate a previous one, first
+        if (project === this.getActiveProject()) {
+            var projectIndex = this._projects.indexOf(project);
+
+            if (projectIndex > 0) {
+                this.activateProject(this._projects[projectIndex - 1]);
+            } else if (projectIndex + 1 < this._projects.length) {
+                this.activateProject(this._projects[projectIndex + 1]);
+            } else {
+                this.activateProject(null);
+            }
+        }
+
+        // Cleanup all documents from the project
+        if (this._documents) {
+            var documentsCopy = this._documents.slice();
+            for (var i = 0; i < documentsCopy.length; ++i) {
+                if (documentsCopy[i].getProject() === project) {
+                    this.removeDocument(documentsCopy[i]);
+                }
+            }
+        }
+
+        // Release the project
+        project.release();
+
+        // Remove it from our list
+        this._projects.splice(this._projects.indexOf(project), 1);
+
+        // Finally trigger the remove event
+        if (this.hasEventListeners(GApplication.ProjectEvent)) {
+            this.trigger(new GApplication.ProjectEvent(GApplication.ProjectEvent.Type.Removed, project));
+        }
+    };
+
+    /**
      * Activates a project
-     * @param {GProject} project the project to be activated, maybe
-     * null to deactivate the current project
+     * @param {GProject|String} project the project to be activated, maybe
+     * null to deactivate the current project or a string to use a project id
      */
     GApplication.prototype.activateProject = function (project) {
+        if (typeof project === 'string') {
+            var projectId = project;
+            project = null;
+
+            for (var i = 0; i < this._projects.length; ++i) {
+                if (this._projects[i].getId() === projectId) {
+                    project = this._projects[i];
+                    break;
+                }
+            }
+
+            if (!project) {
+                throw new Error('Invalid project id: ' + projectId);
+            }
+        }
+
         if (project != this._activeProject) {
             // Deactivate previous one if any
             if (this._activeProject) {
@@ -497,6 +591,7 @@
                 }
 
                 this._activeProject = null;
+                this._updateTitle();
             }
 
             // Activate new one if any
@@ -506,9 +601,15 @@
                 // Now assign the active project
                 this._activeProject = project;
 
+                // Assign the active document
+                this.activateDocument(project.getActiveDocument());
+
+                // Send an event
                 if (this.hasEventListeners(GApplication.ProjectEvent)) {
                     this.trigger(new GApplication.ProjectEvent(GApplication.ProjectEvent.Type.Activated, project));
                 }
+
+                this._updateTitle();
             }
         }
     };
@@ -587,18 +688,20 @@
     };
 
     /**
-     * Add a new document and open up a window for it
-     * and mark the view as being active
-     * @param {GScene} scene the scene to add the document from it
-     * @param {String} [temporaryTitle] optional temporary title to be used
-     * for the document if no url is assigned, defaults to null to use
-     * the default naming scheme
+     * Add a new document, mark it active and open a window for it
+     * @param {GDocument} document
      */
-    GApplication.prototype.addDocument = function (scene, temporaryTitle) {
-        // TODO : I18N
-        var document = new GDocument(scene, null, temporaryTitle ? temporaryTitle : 'Untitled-' + (++this._documentUntitledCount).toString());
-        this._addDocument(document);
-        return document;
+    GApplication.prototype.addDocument = function (document) {
+        // Add document
+        this._documents.push(document);
+
+        // Send an event
+        if (this.hasEventListeners(GApplication.DocumentEvent)) {
+            this.trigger(new GApplication.DocumentEvent(GApplication.DocumentEvent.Type.Added, document));
+        }
+
+        // Add a window for the document making it activated by default
+        var window = this._windows.addWindow(document);
     };
 
     /**
@@ -643,7 +746,7 @@
                         }
 
                         if (document) {
-                            this._addDocument(document);
+                            this.addDocument(document);
                         }
                     }.bind(this);
 
@@ -712,15 +815,19 @@
         if (document != this._activeDocument) {
             // Deactivate previous one if any
             if (this._activeDocument) {
-                if (this._activeDocument) {
-                    this._activeDocument.deactivate();
+                var activeDocument = this._activeDocument;
+                this._activeDocument = null;
 
-                    if (this.hasEventListeners(GApplication.DocumentEvent)) {
-                        this.trigger(new GApplication.DocumentEvent(GApplication.DocumentEvent.Type.Deactivated, this._activeDocument));
-                    }
+                activeDocument.deactivate();
+
+                if (this.hasEventListeners(GApplication.DocumentEvent)) {
+                    this.trigger(new GApplication.DocumentEvent(GApplication.DocumentEvent.Type.Deactivated, activeDocument));
                 }
 
-                this._activeDocument = null;
+                // Deactivate activated window of document (must be last call here)
+                if (activeDocument.getActiveWindow() === this._windows.getActiveWindow()) {
+                    this._windows.activateWindow(null);
+                }
             }
 
             // Activate new one if any
@@ -743,16 +850,16 @@
     };
 
     /**
-     * Closes and removes a document and all of it's views
+     * Removes a document and all of it's views
      * @param {GDocument} document
      */
-    GApplication.prototype.closeDocument = function (document) {
-        var windows = document.getWindows().length;
-        if (windows.length) {
+    GApplication.prototype.removeDocument = function (document) {
+        var docWindows = document.getWindows();
+        if (docWindows.length) {
             // Document has windows so remove them first which
             // will then trigger this function again
-            while (windows.length > 0) {
-                windows.closeWindow(windows[0]);
+            while (docWindows.length > 0) {
+                this._windows.removeWindow(docWindows[0]);
             }
         } else {
             // Remove active document if this is the active one
@@ -1046,21 +1153,6 @@
     };
 
     /**
-     * Add a new document
-     * @param {GDocument} document
-     * @private
-     */
-    GApplication.prototype._addDocument = function (document) {
-        // Send an event
-        if (this.hasEventListeners(GApplication.DocumentEvent)) {
-            this.trigger(new GApplication.DocumentEvent(GApplication.DocumentEvent.Type.Added, document));
-        }
-
-        // Add a window for the document making it activated by default
-        var window = this._windows.addWindow(document);
-    };
-
-    /**
      * Create the main menu based on actions
      * @param {Array<GAction>} actions
      * @private
@@ -1218,11 +1310,23 @@
             this._sourceTitle = document.title;
         }
 
-        var title = this._sourceTitle;
+        var title = '';
 
         var window = this.getWindows().getActiveWindow();
         if (window) {
-            title += ' - ' + window.getTitle();
+            title = window.getTitle();
+        }
+
+        var project = this.getActiveProject();
+        if (project) {
+            if (title !== '') {
+                title += ' - ';
+            }
+            title += '[' + project.getName() + ']';
+        }
+
+        if (!title) {
+            title = this._sourceTitle;
         }
 
         document.title = title;

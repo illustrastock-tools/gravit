@@ -417,6 +417,7 @@
      */
     GPageProperties.prototype._updatePage = function () {
         var scene = this._document.getScene();
+        var project = this._document.getProject();
 
         var select = this._panel.find('select[data-property="msref"]');
         var oldVal = select.val();
@@ -428,9 +429,6 @@
             .text('')
             .appendTo(select);
 
-        // TODO : Add master page references from project
-
-        var project = gApp.getActiveProject();
         var pages = project.getPages();
         for (var i = 0; i < pages.length; ++i) {
             if (pages[i] !== this._page.getReferenceId()) {

@@ -52,8 +52,8 @@
      * @override
      */
     GCloseAllAction.prototype.execute = function () {
-        while (!!gApp.getActiveDocument()) {
-            gApp.closeDocument(gApp.getActiveDocument());
+        while (gApp.getActiveDocument()) {
+            gApp.removeDocument(gApp.getActiveDocument());
         }
     };
 

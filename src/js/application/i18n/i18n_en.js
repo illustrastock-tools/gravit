@@ -5,6 +5,8 @@ ifLocale.setValues(GConvertToPathAction, GLocale.Language.English, ["title"], ["
 ifLocale.setValues(GCloneAction, GLocale.Language.English, ["title"], ["Clone"]);
 ifLocale.setValues(GCloseAction, GLocale.Language.English, ["title"], ["Close"]);
 ifLocale.setValues(GCloseAllAction, GLocale.Language.English, ["title"], ["Close All"]);
+ifLocale.setValues(GCloseProjectAction, GLocale.Language.English, ["title"], ["Close Project"]);
+ifLocale.setValues(GCloseAllProjectsAction, GLocale.Language.English, ["title"], ["Close All Projects"]);
 ifLocale.setValues(GCopyAction, GLocale.Language.English, ["title"], ["Copy"]);
 ifLocale.setValues(GCutAction, GLocale.Language.English, ["title"], ["Cut"]);
 ifLocale.setValues(GDeleteAction, GLocale.Language.English, ["title"], ["Delete"]);

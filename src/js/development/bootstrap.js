@@ -31,14 +31,14 @@ var gDevelopment = {
             test: function () {
                 var page = new GPage(gApp.getActiveProject());
                 page.setProperties(['w', 'h'], [1000, 800]);
-                gApp.addDocument(page, 'Test-Page');
+                gApp.addDocument(new GDocument(page, '#url', 'Test-Page [' + gApp.getActiveProject().getName() + ']'));
             }
         },
         {
             title: 'Create Canvas',
             test: function () {
                 var canvas = new GCanvas(gApp.getActiveProject());
-                gApp.addDocument(canvas, 'Test-Canvas');
+                gApp.addDocument(new GDocument(canvas, '#url', 'Test-Canvas [' + gApp.getActiveProject().getName() + ']'));
             }
         }
     ]

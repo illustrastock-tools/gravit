@@ -59,7 +59,7 @@
      * @override
      */
     GCloseAction.prototype.execute = function () {
-        gApp.getWindows().closeWindow(gApp.getWindows().getActiveWindow());
+        gApp.getWindows().removeWindow(gApp.getWindows().getActiveWindow());
     };
 
     /** @override */

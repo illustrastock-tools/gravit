@@ -38,7 +38,7 @@
      * @override
      */
     GNewProjectAction.prototype.getGroup = function () {
-        return "file";
+        return "project";
     };
 
     /**

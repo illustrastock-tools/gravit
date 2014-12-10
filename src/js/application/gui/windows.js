@@ -110,9 +110,6 @@
                 // Notify the window
                 this._activeWindow.deactivate();
 
-                // Mark deactivated on document
-                this._activeWindow.getDocument()._activeWindow = null;
-
                 // Detach it's container
                 this._activeWindow._container.detach();
             }
@@ -182,25 +179,32 @@
     };
 
     /**
-     * Closes and removes a window. If the window to be closed
+     * Removes a window. If the window to be removed
      * is the last window available for a document, then the
      * document will be closed as well
      * @param {GWindow} window
      */
-    GWindows.prototype.closeWindow = function (window) {
+    GWindows.prototype.removeWindow = function (window) {
         var document = window.getDocument();
 
-        // If window is the active one, try to activate a previous one, first
+        // If window is the active one, try to activate another one
+        // from the same project if there's any
         if (window === this._activeWindow) {
-            var windowIndex = this._windows.indexOf(window);
+            var prjWindows = document.getProject().getWindows();
+            var windowIndex = prjWindows.indexOf(window);
 
             if (windowIndex > 0) {
-                this.activateWindow(this._windows[windowIndex - 1]);
-            } else if (windowIndex + 1 < this._windows.length) {
-                this.activateWindow(this._windows[windowIndex + 1]);
+                this.activateWindow(prjWindows[windowIndex - 1]);
+            } else if (windowIndex + 1 < prjWindows.length) {
+                this.activateWindow(prjWindows[windowIndex + 1]);
             } else {
                 this.activateWindow(null);
             }
+        }
+
+        // Remove from active in document
+        if (document._activeWindow === window) {
+            document._activeWindow = null;
         }
 
         // Remove from the document's windows
@@ -223,7 +227,7 @@
         // If this was the only window for the document left,
         // then remove/close our document now
         if (document._windows.length === 0) {
-            gApp.closeDocument(document);
+            gApp.removeDocument(document);
         }
     };
 

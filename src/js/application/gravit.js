@@ -182,6 +182,8 @@
             // File
             new GNewProjectAction(),
             new GOpenProjectAction(),
+            new GCloseProjectAction(),
+            new GCloseAllProjectsAction(),
 
             new GSaveAction(),
             new GSaveAsAction(),

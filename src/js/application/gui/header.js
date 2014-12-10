@@ -23,7 +23,10 @@
             .addClass('misc')
             .append($('<select></select>')
                 .addClass('projects')
-                .css('width', '100%'))
+                .css('width', '100%')
+                .on('change', function (evt) {
+                    gApp.activateProject($(this).val());
+                }))
             .appendTo(this._htmlElement);
 
         // View toolbar
@@ -55,13 +58,26 @@
     GHeader.prototype._projectEvent = function (evt) {
         switch (evt.type) {
             case GApplication.ProjectEvent.Type.Added:
-                this._htmlElement.find('.projects').append($('<option></option>').text(evt.project.getName()));
+                this._htmlElement.find('.projects').append(
+                    $('<option></option>')
+                        .attr('value', evt.project.getId())
+                        .text(evt.project.getName()));
                 break;
             case GApplication.ProjectEvent.Type.Removed:
+                this._htmlElement.find('.projects option').each(function (index, option) {
+                    var $option = $(option);
+                    if ($option.attr('value') === evt.project.getId()) {
+                        $option.remove();
+                        return false;
+                    }
+                });
                 break;
             case GApplication.ProjectEvent.Type.Activated:
+                this._htmlElement.find('.projects').val(evt.project.getId());
+                this._filterTabsByActiveProject();
                 break;
             case GApplication.ProjectEvent.Type.Deactivated:
+                // NO-OP
                 break;
             default:
                 break;
@@ -124,6 +140,7 @@
         $('<div></div>')
             .data('window', window)
             .addClass('tab')
+            .css('display', window.getDocument().getProject() === gApp.getActiveProject() ? '' : 'none')
             .append($('<span></span>')
                 .addClass('title')
                 .text(window.getTitle()))
@@ -131,7 +148,7 @@
                 .addClass('close fa fa-times')
                 .on('click', function (evt) {
                     evt.stopPropagation();
-                    gApp.getWindows().closeWindow($(this).parents('.tab').data('window'));
+                    gApp.getWindows().removeWindow($(this).parents('.tab').data('window'));
                 }))
             .on('click', function () {
                 gApp.getWindows().activateWindow($(this).data('window'));
@@ -158,6 +175,15 @@
         this._htmlElement.find('.windows > .tab').each(function (index, element) {
             var $element = $(element);
             $element.toggleClass('g-active', $element.data('window') === gApp.getWindows().getActiveWindow());
+        });
+    };
+
+    /** @private */
+    GHeader.prototype._filterTabsByActiveProject = function () {
+        var activeProject = gApp.getActiveProject();
+        this._htmlElement.find('.windows > .tab').each(function (index, element) {
+            var $element = $(element);
+            $element.css('display', $element.data('window').getDocument().getProject() === activeProject ? '' : 'none');
         });
     };
 

@@ -13,6 +13,11 @@
         this._view.setViewMargin([GWindow.VIEW_MARGIN, GWindow.VIEW_MARGIN, GWindow.VIEW_MARGIN, GWindow.VIEW_MARGIN]);
         this._container.append(this._view._htmlElement);
 
+        // If not having a page, mark a white background for the canvas
+        if (!(document.getScene() instanceof GPage)) {
+            this._view._htmlElement.style.background = '#fff';
+        }
+
         // Add "hack" to focus the view on clicking
         this._container.on('mousedown', function (e) {
             this._view.focus();

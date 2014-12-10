@@ -14,6 +14,9 @@
         // TODO : I18N
         this._title = title;
 
+        // Add ourself to the project
+        this.getProject()._documents.push(this);
+
         // Provide an url resolver to our scene
         this._scene.addEventListener(GScene.ResolveUrlEvent, this._resolveUrl, this);
 
@@ -225,20 +228,27 @@
      * Called before this document gets activated
      */
     GDocument.prototype.activate = function () {
-        // NO-OP
+        this.getProject()._activeDocument = this;
     };
 
     /**
      * Called before this document gets deactivated
      */
     GDocument.prototype.deactivate = function () {
-        // NO-OP
     };
 
     /**
      * Called when this document gets released
      */
     GDocument.prototype.release = function () {
+        var project = this.getProject();
+        var prjDocuments = project._documents;
+        prjDocuments.splice(prjDocuments.indexOf(this), 1);
+
+        if (project._activeDocument === this) {
+            project._activeDocument = null;
+        }
+
         this._editor.release();
 
         this._scene.removeEventListener(GScene.ResolveUrlEvent, this._resolveUrl, this);

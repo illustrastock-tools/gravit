@@ -9,6 +9,9 @@
         GWorkspace.call(this);
         this._directory = directory;
         this._name = name;
+        this._id = GUtil.uuid();
+        this._documents = [];
+        this._activeDocument = null;
 
     };
     GObject.inherit(GProject, GWorkspace);
@@ -28,6 +31,27 @@
     GProject.prototype._name = null;
 
     /**
+     * The id of the project
+     * @type {String}
+     * @private
+     */
+    GProject.prototype._id = null;
+
+    /**
+     * The documents attached to the project
+     * @type {Array<GDocument>}
+     * @private
+     */
+    GProject.prototype._documents = null;
+
+    /**
+     * The currently active document of this project
+     * @type {GDocument}
+     * @private
+     */
+    GProject.prototype._activeDocument = null;
+
+    /**
      * Returns the directory of the project
      * @returns {*}
      */
@@ -41,6 +65,45 @@
      */
     GProject.prototype.getName = function () {
         return this._name;
+    };
+
+    /**
+     * Returns the id for the project
+     * @return {String}
+     */
+    GProject.prototype.getId = function () {
+        return this._id;
+    };
+
+    /**
+     * Returns a list of all documents attached to this project
+     * @return {Array<GDocument>}
+     */
+    GProject.prototype.getDocuments = function () {
+        return this._documents;
+    };
+
+    /**
+     * Returns the currently active document of this project
+     * @return {GDocument}
+     */
+    GProject.prototype.getActiveDocument = function () {
+        return this._activeDocument;
+    };
+
+    /**
+     * Returns a list of all windows within all documents of this project
+     * @return {Array<GWindow>}
+     */
+    GProject.prototype.getWindows = function () {
+        var result = [];
+        for (var i = 0; i < this._documents.length; ++i) {
+            var docWins = this._documents[i].getWindows();
+            if (docWins && docWins.length > 0) {
+                result = result.concat(docWins);
+            }
+        }
+        return result;
     };
 
     var projectFile = 'project.grvp';
