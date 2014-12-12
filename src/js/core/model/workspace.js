@@ -151,6 +151,10 @@
         return this._styles;
     };
 
+    GWorkspace.prototype.addPage = function (page) {
+        this._pages.push(page);
+    };
+
     GWorkspace.prototype.getPages = function () {
         return [];
     };

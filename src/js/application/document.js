@@ -5,14 +5,11 @@
      * @extends GEventTarget
      * @constructor
      */
-    function GDocument(scene, url, title) {
-        this.setUrl(url);
+    function GDocument(scene) {
         this._scene = scene;
         this._editor = new GEditor(scene);
         this._windows = [];
         this._activeWindow = null;
-        // TODO : I18N
-        this._title = title;
 
         // Add ourself to the project
         this.getProject()._documents.push(this);
@@ -143,7 +140,7 @@
      * @return {String}
      */
     GDocument.prototype.getTitle = function () {
-        return this._title;
+        return this._scene.getProperty('name');
     };
 
     /**

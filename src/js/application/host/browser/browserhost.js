@@ -112,24 +112,66 @@
 
     /** @override */
     GBrowserHost.prototype.openDirectoryPrompt = function (done) {
-        // Dummy
-        done('', 'dummy-' + (dummyCount++).toString());
+        var directory = prompt('Directory Name:');
+        if (directory && directory.length) {
+            done(directory, directory);
+        }
     };
 
     /** @override */
     GBrowserHost.prototype.openDirectoryFile = function (directory, filename, createIfNotExists, writeable, done) {
-        // Dummy
-        done('');
+        if (directory.substr(directory.length - 1, 1) !== '/') {
+            directory += '/';
+        }
+
+        var location = directory + filename;
+        var item = _.localStorage.getItem(location);
+        if ((!item && createIfNotExists) || item) {
+            done(location, filename);
+        }
     };
 
     /** @override */
     GBrowserHost.prototype.getFileContents = function (file, binary, done) {
-        // Dummy
+        var item = _.localStorage.getItem(file);
+        if (!item) {
+            throw new Error('No such item in localStorage: ' + file);
+        }
+
+        var buffer = null;
+        if (binary) {
+            var binaryString = _.atob(item);
+            var length = binaryString.length;
+            var bytes = new Uint8Array(length);
+            for (var i = 0; i < length; i++) {
+                var ascii = binaryString.charCodeAt(i);
+                bytes[i] = ascii;
+            }
+            buffer = bytes.buffer;
+        } else {
+            buffer = item;
+        }
+
+        done(buffer);
     };
 
     /** @override */
     GBrowserHost.prototype.putFileContents = function (file, data, binary, done) {
-        // Dummy
+        var item = null;
+        if (binary) {
+            var binaryString = '';
+            var bytes = new Uint8Array(data);
+            var length = bytes.byteLength;
+            for (var i = 0; i < length; i++) {
+                binaryString += String.fromCharCode(bytes[i]);
+            }
+            item = _.btoa(binaryString);
+        } else {
+            item = data;
+        }
+
+        _.localStorage.setItem(file, item);
+
         if (done) {
             done();
         }

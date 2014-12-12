@@ -163,6 +163,7 @@
                 moreStuff: 123
             }), false, function () {
                 this._saveSwatches(null, function () {
+                    this._swatches.addEventListener(GNode.AfterInsertEvent, this._saveSwatches, this);
                     this._saveStyles(null, done);
                 }.bind(this));
             }.bind(this));
