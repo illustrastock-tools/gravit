@@ -28,25 +28,14 @@
         var guideX = null;
         var guideY = null;
         var deltaX = null;
-        var deltaY= null;
+        var deltaY = null;
         var delta;
         var result = null;
 
         if (this._scene instanceof GPage) {
-            var page = this._scene;
-            var handlePage = true;
-
-            if (this._exclusions && this._exclusions.length) {
-                for (var i = 0; i < this._exclusions.length; ++i) {
-                    if (this._exclusions[i] == page) {
-                        handlePage = false;
-                        break;
-                    }
-                }
-            }
-
-            if (handlePage) {
-                var pageBBox = page.getGeometryBBox();
+            var pageBBoxes = [this._scene.getPageMarginBBox(), this._scene.getGeometryBBox()];
+            for (var p = 0; p < pageBBoxes.length; ++p) {
+                var pageBBox = pageBBoxes[p];
                 if (pageBBox && !pageBBox.isEmpty()) {
                     var tl = pageBBox.getSide(GRect.Side.TOP_LEFT);
                     var br = pageBBox.getSide(GRect.Side.BOTTOM_RIGHT);
@@ -79,21 +68,11 @@
         if (resX !== null || resY !== null) {
             result = {
                 x: resX !== null ? {value: resX, guide: guideX, delta: deltaX} : null,
-                y: resY !== null ? {value: resY, guide: guideY, delta: deltaY} : null};
+                y: resY !== null ? {value: resY, guide: guideY, delta: deltaY} : null
+            };
         }
 
         return result;
-    };
-
-    GPageGuide.prototype.useExclusions = function (exclusions) {
-        var node;
-        this._exclusions = [];
-        for (var i = 0; i < exclusions.length; ++i) {
-            node = exclusions[i];
-            if (node instanceof GPage) {
-                this._exclusions.push(node);
-            }
-        }
     };
 
     /** @override */

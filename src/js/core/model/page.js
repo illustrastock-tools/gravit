@@ -81,6 +81,19 @@
         return bbox;
     };
 
+    /**
+     * Returns the page's margin box which always is the page's
+     * geometry bbox minus additional margins if any
+     * @return {GRect}
+     */
+    GPage.prototype.getPageMarginBBox = function () {
+        var bbox = this.getGeometryBBox();
+        if (bbox && !bbox.isEmpty()) {
+            return bbox.expanded(-this.$ml, -this.$mt, -this.$mr, -this.$mb);
+        }
+        return bbox;
+    };
+
     /** @override */
     GPage.prototype._getBitmapPaintArea = function () {
         return this.getPageClipBBox();
