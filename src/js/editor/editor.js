@@ -78,6 +78,21 @@
     };
 
     /**
+     * Enumeration of arrange align modes
+     * @enum
+     */
+    GEditor.ArrangeAlignType = {
+        AlignLeft: 'align-left',
+        AlignCenter: 'align-center',
+        AlignRight: 'align-right',
+        AlignTop: 'align-top',
+        AlignMiddle: 'align-middle',
+        AlignBottom: 'align-bottom',
+        AlignJustifyHorizontal: 'align-justify-horizontal',
+        AlignJustifyVertical: 'align-justify-vertical'
+    };
+
+    /**
      * Get the underlying graphic editor for a given scene
      * @param {GScene} scene
      * @returns {GEditor} a graphic editor for the scene
@@ -1088,7 +1103,6 @@
      * or set to null this uses the current selection
      * @param {Boolean} [noTransaction] if true, will not create a
      * transaction (undo/redo), defaults to false
-     * @override
      */
     GEditor.prototype.arrangeOrder = function (arrangeOrderType, elements, noTransaction) {
         var selection = null;
@@ -1177,6 +1191,171 @@
 
         if (selection) {
             this.updateSelection(false, selection);
+        }
+    };
+
+    /**
+     * Arrange alignment of elements
+     * @param {GEditor.ArrangeAlignType} arrangeAlignType the alignment type
+     * @param {Array<GElement>} [elements] optional elements, if not given
+     * uses the current selection
+     * @param {Boolean} [compound] if provided, aligns the whole element's bbox,
+     * otherwise if false (default), aligns each element individually
+     * @param {Boolean} [geometry] if provided, specifies whether to
+     * use geometry box for alignment, otherwise use paint box. Defaults
+     * to false.
+     * @param {GRect} [referenceBox] a reference box to align to, if not
+     * given uses the element's total bbox
+     * @param {Boolean} [noTransaction] if true, will not create a
+     * transaction (undo/redo), defaults to false
+     */
+    GEditor.prototype.arrangeAlign = function (arrangeAlignType, elements, compound, geometry, referenceBox, noTransaction) {
+        if (!elements) {
+            if (!this._selection || this._selection.length === 0) {
+                return;
+            }
+
+            elements = this._selection.slice();
+        }
+
+        var tmpElements = elements;
+        var elements = [];
+
+        var elementsBBox = null;
+        for (var i = 0; i < tmpElements.length; ++i) {
+            var element = tmpElements[i];
+            if (element.hasMixin(GElement.Transform)) {
+                var bbox = geometry ? element.getGeometryBBox() : element.getPaintBBox();
+                if (!bbox || bbox.isEmpty()) {
+                    continue;
+                }
+
+                elementsBBox = !elementsBBox ? bbox : elementsBBox.united(bbox);
+
+                elements.push({
+                    bbox: bbox,
+                    element: element
+                });
+            }
+        }
+
+        if (!referenceBox) {
+            for (var i = 0; i < elements.length; ++i) {
+                var bbox = elements[i].element.getPaintBBox();
+                if (bbox && !bbox.isEmpty()) {
+                    referenceBox = referenceBox ? referenceBox.united(bbox) : bbox;
+                }
+            }
+        }
+
+        if (!referenceBox || referenceBox.isEmpty()) {
+            return;
+        }
+
+        if (!noTransaction) {
+            this.beginTransaction();
+        }
+
+        try {
+            for (var i = 0; i < elements.length; ++i) {
+                var bbox = compound ? elementsBBox : elements[i].bbox;
+                var element = elements[i].element;
+                var elemEditor = GElementEditor.getEditor(element);
+
+                switch (arrangeAlignType) {
+                    case GEditor.ArrangeAlignType.AlignLeft:
+                        if (!elemEditor || !elemEditor.isAlignPartsAllowed()) {
+                            if (referenceBox.getX() !== bbox.getX()) {
+                                element.transform(new GTransform(1, 0, 0, 1, referenceBox.getX() - bbox.getX(), 0));
+                            }
+                        } else {
+                            elemEditor.alignParts(GEditor.ArrangeAlignType.AlignLeft, referenceBox.getX(), null);
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignCenter:
+                        var center = referenceBox.getX() + referenceBox.getWidth() / 2;
+                        if (!elemEditor || !elemEditor.isAlignPartsAllowed()) {
+                            if (center !== bbox.getX() + bbox.getWidth() / 2) {
+                                element.transform(new GTransform(1, 0, 0, 1, center - bbox.getX() - bbox.getWidth() / 2, 0));
+                            }
+                        } else {
+                            elemEditor.alignParts(GEditor.ArrangeAlignType.AlignCenter, center, null);
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignRight:
+                        var right = referenceBox.getX() + referenceBox.getWidth();
+                        if (!elemEditor || !elemEditor.isAlignPartsAllowed()) {
+                            if (right !== bbox.getX() + bbox.getWidth()) {
+                                element.transform(new GTransform(1, 0, 0, 1, right - bbox.getWidth() - bbox.getX(), 0));
+                            }
+                        } else {
+                            elemEditor.alignParts(GEditor.ArrangeAlignType.AlignRight, right, null);
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignTop:
+                        if (!elemEditor || !elemEditor.isAlignPartsAllowed()) {
+                            if (referenceBox.getY() !== bbox.getY()) {
+                                element.transform(new GTransform(1, 0, 0, 1, 0, referenceBox.getY() - bbox.getY()));
+                            }
+                        } else {
+                            elemEditor.alignParts(GEditor.ArrangeAlignType.AlignTop, null, referenceBox.getY());
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignMiddle:
+                        var center = referenceBox.getY() + referenceBox.getHeight() / 2;
+                        if (!elemEditor || !elemEditor.isAlignPartsAllowed()) {
+                            if (center !== bbox.getY() + bbox.getHeight() / 2) {
+                                element.transform(new GTransform(1, 0, 0, 1, 0, center - bbox.getY() - bbox.getHeight() / 2));
+                            }
+                        } else {
+                            elemEditor.alignParts(GEditor.ArrangeAlignType.AlignMiddle, null, center);
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignBottom:
+                        var bottom = referenceBox.getY() + referenceBox.getHeight();
+                        if (!elemEditor || !elemEditor.isAlignPartsAllowed()) {
+                            if (bottom !== bbox.getY() + bbox.getHeight()) {
+                                element.transform(new GTransform(1, 0, 0, 1, 0, bottom - bbox.getHeight() - bbox.getY()));
+                            }
+                        } else {
+                            elemEditor.alignParts(GEditor.ArrangeAlignType.AlignBottom, null, bottom);
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignJustifyHorizontal:
+                        if (referenceBox.getX() !== bbox.getX() || bbox.getWidth() !== referenceBox.getWidth()) {
+                            element.transform(
+                                new GTransform(1, 0, 0, 1, 0, 0)
+                                    .translated(-bbox.getX(), -bbox.getY())
+                                    .scaled(referenceBox.getWidth() / bbox.getWidth(), 1)
+                                    .translated(bbox.getX(), bbox.getY())
+                                    .translated(referenceBox.getX() - bbox.getX(), 0));
+                        }
+                        break;
+
+                    case GEditor.ArrangeAlignType.AlignJustifyVertical:
+                        if (referenceBox.getY() !== bbox.getY() || bbox.getHeight() !== referenceBox.getHeight()) {
+                            element.transform(
+                                new GTransform(1, 0, 0, 1, 0, 0)
+                                    .translated(-bbox.getX(), -bbox.getY())
+                                    .scaled(1, referenceBox.getHeight() / bbox.getHeight())
+                                    .translated(bbox.getX(), bbox.getY())
+                                    .translated(0, referenceBox.getY() - bbox.getY()));
+                        }
+                        break;
+                }
+            }
+        }
+        finally {
+            if (!noTransaction) {
+                // TODO : I18N
+                this.commitTransaction('Arrange Alignment');
+            }
         }
     };
 

@@ -601,7 +601,7 @@
 
     /**
      * Align the selected parts of the element. Should be called only after prior check with isAlignPartsAllowed()
-     * @param {GAlignAction.Type} alignType
+     * @param {GEditor.ArrangeAlignType} alignType
      * @param {Number} posX - the X coordinate of the position to align to, or null if no vertical alignment
      * @param {Number} posY - the Y coordinate of the position to align to, or null if no horizontal alignment
      */

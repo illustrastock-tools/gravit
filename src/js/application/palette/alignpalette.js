@@ -89,25 +89,25 @@
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Align Left')
-                    .attr('data-align', GAlignAction.Type.AlignLeft)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignLeft)
                     .append($('<span></span>')
                         .addClass('fa fa-align-left')))
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Align Center')
-                    .attr('data-align', GAlignAction.Type.AlignCenter)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignCenter)
                     .append($('<span></span>')
                         .addClass('fa fa-align-center')))
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Align Right')
-                    .attr('data-align', GAlignAction.Type.AlignRight)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignRight)
                     .append($('<span></span>')
                         .addClass('fa fa-align-right')))
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Justify Horizontal')
-                    .attr('data-align', GAlignAction.Type.AlignJustifyHorizontal)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignJustifyHorizontal)
                     .append($('<span></span>')
                         .addClass('fa fa-align-justify fa-rotate-270')))
                 .append($('<button></button>')
@@ -132,25 +132,25 @@
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Align Top')
-                    .attr('data-align', GAlignAction.Type.AlignTop)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignTop)
                     .append($('<span></span>')
                         .addClass('fa fa-align-right fa-rotate-270')))
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Align Middle')
-                    .attr('data-align', GAlignAction.Type.AlignMiddle)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignMiddle)
                     .append($('<span></span>')
                         .addClass('fa fa-align-center fa-rotate-270')))
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Align Bottom')
-                    .attr('data-align', GAlignAction.Type.AlignBottom)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignBottom)
                     .append($('<span></span>')
                         .addClass('fa fa-align-left fa-rotate-270')))
                 .append($('<button></button>')
                     // TODO : I18N
                     .attr('title', 'Justify Vertical')
-                    .attr('data-align', GAlignAction.Type.AlignJustifyVertical)
+                    .attr('data-align', GEditor.ArrangeAlignType.AlignJustifyVertical)
                     .append($('<span></span>')
                         .addClass('fa fa-align-justify')))
                 .append($('<button></button>')
@@ -318,7 +318,7 @@
     
     /**
      * Returns the action args
-     * @param {GAlignAction.Type|GDistributeAction.Type} type
+     * @param {GEditor.ArrangeAlignType|GDistributeAction.Type} type
      * @param {String} mode - 'align', 'dist'
      * @return {{actionId: String, actionParams: Array<*>}}
      * @private
