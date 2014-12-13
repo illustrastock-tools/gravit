@@ -620,6 +620,27 @@
     };
 
     /**
+     * Converts the underlying content to a plain text string
+     * @returns {String}
+     */
+    GText.prototype.asPlainText = function () {
+        var result = '';
+
+        this.getContent().acceptChildren(function (node) {
+            if (node instanceof GText.Break) {
+                result += '\n';
+            } else if (node instanceof GText.Chunk) {
+                var content = node.getContent();
+                if (content && content !== "") {
+                    result += content;
+                }
+            }
+        });
+
+        return result;
+    };
+
+    /**
      * Clears and replaces the contents of this text from
      * a given html string
      * @param {String} html
@@ -798,12 +819,12 @@
 
                             case GText.VerticalAlign.Middle:
                                 verticalShift = this._textBox.getY() - this._sizeBox.getY() +
-                                    (this._textBox.getHeight() - this._sizeBox.getHeight()) / 2;
+                                (this._textBox.getHeight() - this._sizeBox.getHeight()) / 2;
                                 break;
 
                             case GText.VerticalAlign.Bottom:
                                 verticalShift = this._textBox.getY() - this._sizeBox.getY() +
-                                    this._textBox.getHeight() - this._sizeBox.getHeight();
+                                this._textBox.getHeight() - this._sizeBox.getHeight();
                                 break;
                         }
                     } else if (this._sizeBox) {
@@ -904,7 +925,7 @@
             trf = new GTransform()
                 .translated(-textBox.getX(), -textBox.getY())
                 .scaled(newVisualTextBox.getWidth() / textBox.getWidth(),
-                    newVisualTextBox.getHeight() / textBox.getHeight())
+                newVisualTextBox.getHeight() / textBox.getHeight())
                 .translated(newVisualTextBox.getX(), newVisualTextBox.getY());
 
             this.setProperties(['ah', 'aw', 'trf'],
