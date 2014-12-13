@@ -28,6 +28,7 @@ ifLocale.setValues(GKey, GLocale.Language.English, ["key.30", "key.31", "key.32"
 ifLocale.setValues(GFont, GLocale.Language.English, ["weight.thin", "weight.extra-light", "weight.light", "weight.regular", "weight.medium", "weight.semi-bold", "weight.bold", "weight.extra-bold", "weight.heavy", "category.other", "category.serif", "category.monospace", "category.iconic"], ["Thin", "Extra-Light", "Light", "Regular", "Medium", "Semi-Bold", "Bold", "Extra-Bold", "Heavy", "Other", "Serif", "Monospace", "Iconic"]);
 
 // Scene
+ifLocale.setValues(GImage, GLocale.Language.English, ["name"], ["Image"]);
 ifLocale.setValues(GEllipse, GLocale.Language.English, ["name"], ["Ellipse"]);
 ifLocale.setValues(GRectangle, GLocale.Language.English, ["name"], ["Rectangle"]);
 ifLocale.setValues(GLayer, GLocale.Language.English, ["name"], ["Layer"]);
