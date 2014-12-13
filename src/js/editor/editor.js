@@ -573,7 +573,7 @@
                 var clone = element.clone();
                 if (clone) {
                     // Append clone to parent of selected item
-                    element.getParent().appendChild(clone);
+                    element.getParent().insertChild(clone, element.getNext());
 
                     // Transform clone if desired
                     if (transform && clone.hasMixin(GElement.Transform)) {
@@ -941,7 +941,7 @@
                                     elementToApplyTransform = selectionElement.clone();
 
                                     // Append clone to parent of selected item
-                                    selectionElement.getParent().appendChild(elementToApplyTransform);
+                                    selectionElement.getParent().insertChild(elementToApplyTransform, selectionElement.getNext());
 
                                     // Push clone into new selection
                                     clonedSelection.push(elementToApplyTransform);
