@@ -194,16 +194,20 @@
             // If svg image then prompt whether to convert to vector
             // or keep as an image
             if (file.type === 'image/svg+xml') {
-                vex.dialog.confirm({
+                vex.dialog.open({
                     // TODO : I18N
                     message: 'Convert the image to vectors?',
+                    buttons: [
+                        $.extend({}, vex.dialog.buttons.YES, {text: ifLocale.get(GLocale.Constant.Yes)}),
+                        $.extend({}, vex.dialog.buttons.NO, {text: ifLocale.get(GLocale.Constant.No)})
+                    ],
                     callback: function (value) {
                         if (value) {
                             var page = this._scene instanceof GPage ? this._scene : null;
-                            var layer = this._scene.getActiveLayer();
+                            var target = this._scene.getActiveLayer() || this._scene;
                             GIO.read('image/svg+xml', file, function (node) {
                                 if (node) {
-                                    layer.appendChild(node);
+                                    target.appendChild(node);
                                     callback(node);
                                 }
                             }, {

@@ -40,7 +40,7 @@
 
     GSVGReader.prototype._read = function (source, callback, settings) {
         // Parse source as xml
-        try {
+        //try {
             var svgDoc = null;
             if (typeof(Windows) != 'undefined' && typeof(Windows.Data) != 'undefined' && typeof(Windows.Data.Xml) != 'undefined') {
                 var svgDoc = new Windows.Data.Xml.Dom.XmlDocument();
@@ -100,10 +100,10 @@
 
             // Done here:
             callback(!!result ? result : null);
-        } catch (e) {
+        /*} catch (e) {
             callback(null);
             console.log(e);
-        }
+        }*/
     };
 
     GIO.registerReader(new GSVGReader());
@@ -735,7 +735,7 @@
                 if (node) {
                     if (node instanceof GBlock) {
                         if (this.style('display').value == 'none' || this.style('visibility').value == 'hidden') {
-                            element.setProperty('vis', false);
+                            node.setProperty('vis', false);
                         }
                     }
 

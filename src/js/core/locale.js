@@ -79,6 +79,8 @@
         Save: new GLocale.Key(GLocale, "save"),
         Cancel: new GLocale.Key(GLocale, "cancel"),
         Ok: new GLocale.Key(GLocale, "ok"),
+        Yes: new GLocale.Key(GLocale, "yes"),
+        No: new GLocale.Key(GLocale, "no"),
         Close: new GLocale.Key(GLocale, "close"),
         Loading: new GLocale.Key(GLocale, "loading"),
         LoadingOf: new GLocale.Key(GLocale, "loading_of"),

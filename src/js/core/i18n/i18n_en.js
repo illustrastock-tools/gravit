@@ -1,6 +1,6 @@
 // Core
-ifLocale.setValues(GLocale, GLocale.Language.English, ["create", "add", "edit", "remove", "delete", "open", "save", "cancel", "ok", "close", "loading", "loading_of", "saving", "saving_of", "success", "failure", "waiting"],
-    ["Create", "Add", "Edit", "Remove", "Delete", "Open", "Save", "Cancel", "OK", "Close", "Loading", "Loading of", "Saving", "Saving of", "Success", "Failure", "Waiting"]);
+ifLocale.setValues(GLocale, GLocale.Language.English, ["create", "add", "edit", "remove", "delete", "open", "save", "cancel", "ok", "yes", "no", "close", "loading", "loading_of", "saving", "saving_of", "success", "failure", "waiting"],
+    ["Create", "Add", "Edit", "Remove", "Delete", "Open", "Save", "Cancel", "OK", "Yes", "No", "Close", "Loading", "Loading of", "Saving", "Saving of", "Success", "Failure", "Waiting"]);
 
 // Keys - TODO : Merge into one call
 ifLocale.setValues(GKey, GLocale.Language.English, ["key.1"], ["Space"]);
