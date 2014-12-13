@@ -1684,6 +1684,10 @@
                     this._anchorPoints._attachToParent(this);
                 }
             }
+        } else if (change === GNode._Change.WorkspaceAttached || change === GNode._Change.WorkspaceDetach) {
+            if (this._anchorPoints) {
+                this._anchorPoints._setWorkspace(change === GNode._Change.WorkspaceDetach ? null : this._workspace);
+            }
         }
 
         GShape.prototype._handleChange.call(this, change, args);

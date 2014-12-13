@@ -114,8 +114,17 @@
     };
 
     /** @override */
-    GCompoundPath.Paths._detachFromParent = function (parent) {
+    GCompoundPath.Paths.prototype._detachFromParent = function (parent) {
         GElement.prototype._detachFromParent.call(this, parent);
+    };
+
+    /** @private */
+    GCompoundPath.Paths.prototype._setScene = function (scene) {
+        this.acceptChildren(function (node) {
+            if (node instanceof GElement) {
+                node._setScene(scene);
+            }
+        });
     };
 
     /** @override */
@@ -194,6 +203,14 @@
                 if (change === GNode._Change.ParentAttached) {
                     this._paths._attachToParent(this);
                 }
+            }
+        } else if (change === GNode._Change.WorkspaceAttached || change === GNode._Change.WorkspaceDetach) {
+            if (this._paths) {
+                this._paths._setWorkspace(change === GNode._Change.WorkspaceDetach ? null : this._workspace);
+            }
+        } else if (change === GElement._Change.SceneAttached || change === GElement._Change.SceneDetach) {
+            if (this._paths) {
+                this._paths._setScene(change === GElement._Change.SceneDetach ? null : this._scene);
             }
         }
 
