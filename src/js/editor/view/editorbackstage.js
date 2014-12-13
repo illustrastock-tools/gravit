@@ -22,6 +22,17 @@
 
     /** @override */
     GEditorBackStage.prototype.paint = function (context) {
+        // View painting
+
+        //
+        // Scene painting
+        //
+
+        // Transform dirty areas into scene
+        if (context.dirtyMatcher) {
+            context.dirtyMatcher.transform(this._view.getViewTransform());
+        }
+
         var scene = this._view.getScene();
 
         if (scene instanceof GPage) {
