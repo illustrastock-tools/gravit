@@ -527,6 +527,11 @@
         if (evt.key === GKey.Constant.UP || evt.key === GKey.Constant.DOWN ||
             evt.key === GKey.Constant.LEFT || evt.key === GKey.Constant.RIGHT) {
 
+            // Prevent cursor handling if there're any other modifier keys hold
+            if (ifPlatform.modifiers.metaKey || ifPlatform.modifiers.spaceKey) {
+                return;
+            }
+
             // Shift selection if any
             if (this._editor.hasSelection() && (!this._mode || this._mode === GSelectTool._Mode.Moving)) {
                 if (this._mode !== GSelectTool._Mode.Moving) {

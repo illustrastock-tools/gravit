@@ -214,10 +214,10 @@
             new GInvertSelectionAction(),
 
             // Modify
-            new GArrangeAction(GArrangeAction.Type.SendToFront),
-            new GArrangeAction(GArrangeAction.Type.BringForward),
-            new GArrangeAction(GArrangeAction.Type.SendBackward),
-            new GArrangeAction(GArrangeAction.Type.SendToBack),
+            new GArrangeAction(GEditor.ArrangeOrderType.SendToFront),
+            new GArrangeAction(GEditor.ArrangeOrderType.BringForward),
+            new GArrangeAction(GEditor.ArrangeOrderType.SendBackward),
+            new GArrangeAction(GEditor.ArrangeOrderType.SendToBack),
 
             new GAlignAction(GAlignAction.Type.AlignLeft),
             new GAlignAction(GAlignAction.Type.AlignCenter),

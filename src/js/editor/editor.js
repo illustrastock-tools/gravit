@@ -67,6 +67,17 @@
     };
 
     /**
+     * Enumeration of arrange order modes
+     * @enum
+     */
+    GEditor.ArrangeOrderType = {
+        SendToFront: 'send-front',
+        BringForward: 'bring-forward',
+        SendBackward: 'send-backward',
+        SendToBack: 'send-back'
+    };
+
+    /**
      * Get the underlying graphic editor for a given scene
      * @param {GScene} scene
      * @returns {GEditor} a graphic editor for the scene
@@ -98,7 +109,7 @@
             }
         }
     };
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // GEditor.FileDropEvent Event
     // -----------------------------------------------------------------------------------------------------------------
@@ -1067,6 +1078,105 @@
                     this.commitTransaction('Convert to Path(s)');
                 }
             }
+        }
+    };
+
+    /**
+     * Arranges the order of a given set of elements or the selection
+     * @param {GEditor.ArrangeOrderType} arrangeOrderType the order type to be used
+     * @param {Array<GElement>} [elements] optional elements, if not given
+     * or set to null this uses the current selection
+     * @param {Boolean} [noTransaction] if true, will not create a
+     * transaction (undo/redo), defaults to false
+     * @override
+     */
+    GEditor.prototype.arrangeOrder = function (arrangeOrderType, elements, noTransaction) {
+        var selection = null;
+
+        if (!elements) {
+            if (!this._selection || this._selection.length === 0) {
+                return;
+            }
+
+            selection = this._selection.slice();
+            elements = selection;
+        }
+
+        if (arrangeOrderType === GEditor.ArrangeOrderType.SendToFront ||
+            arrangeOrderType === GEditor.ArrangeOrderType.SendBackward) {
+            elements = GNode.order(elements);
+        } else { // BringForward || SendToBack
+            elements = GNode.order(elements, true/*reverse*/);
+        }
+
+        if (!noTransaction) {
+            this.beginTransaction();
+        }
+
+        try {
+            for (var i = 0; i < elements.length; ++i) {
+                var element = elements[i];
+                var parent = element.getParent();
+
+                switch (arrangeOrderType) {
+                    case GEditor.ArrangeOrderType.SendToFront:
+                        if (element.getNext() !== null) {
+                            parent.removeChild(element);
+                            parent.appendChild(element);
+                        }
+                        break;
+                    case GEditor.ArrangeOrderType.BringForward:
+                        var next = element.getNext();
+                        if (next !== null) {
+                            var nextUnselected = null;
+                            while (!nextUnselected && next) {
+                                if (!next.hasFlag(GNode.Flag.Selected)) {
+                                    nextUnselected = next;
+                                }
+                                next = next.getNext();
+                            }
+
+                            if (nextUnselected !== null) {
+                                var posElement = nextUnselected.getNext();
+                                parent.removeChild(element);
+                                parent.insertChild(element, posElement);
+                            }
+                        }
+                        break;
+                    case GEditor.ArrangeOrderType.SendBackward:
+                        var previous = element.getPrevious();
+                        if (previous !== null) {
+                            var prevUnselected = null;
+                            while (!prevUnselected && previous) {
+                                if (!previous.hasFlag(GNode.Flag.Selected)) {
+                                    prevUnselected = previous;
+                                }
+                                previous = previous.getPrevious();
+                            }
+                            if (prevUnselected !== null) {
+                                parent.removeChild(element);
+                                parent.insertChild(element, prevUnselected);
+                            }
+                        }
+                        break;
+                    case GEditor.ArrangeOrderType.SendToBack:
+                        if (element.getPrevious() !== null) {
+                            parent.removeChild(element);
+                            parent.insertChild(element, parent.getFirstChild());
+                        }
+                        break;
+                }
+            }
+        }
+        finally {
+            if (!noTransaction) {
+                // TODO : I18N
+                this.commitTransaction('Arrange Order');
+            }
+        }
+
+        if (selection) {
+            this.updateSelection(false, selection);
         }
     };
 
