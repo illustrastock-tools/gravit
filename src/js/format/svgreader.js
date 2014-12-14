@@ -883,11 +883,16 @@
 
             this.setSceneContext = function (ctx, node) {
                 if (this.attribute('transform').hasValue()) {
+                    // As setSceneContext() is called with the ctx.transform value taken from stack,
+                    // the local transformation should be applied at first
                     var transform = new svg.Transform(this.attribute('transform').value);
+                    var trf = ctx.transform;
+                    ctx.transform = new GTransform();
                     transform.apply(ctx);
+                    ctx.transform = ctx.transform.multiplied(trf);
                 }
 
-                if (node instanceof GBlock && this.attribute('id').hasValue()) {
+                if (node && node instanceof GBlock && this.attribute('id').hasValue()) {
                     node.setProperty('name', this.attribute('id').value);
                 }
 
@@ -1159,13 +1164,17 @@
 
             this.baseSetSceneContext = this.setSceneContext;
             this.setSceneContext = function (ctx) {
-                this.baseSetSceneContext(ctx);
-
                 // create new view port
                 if (!this.attribute('x').hasValue()) this.attribute('x', true).value = 0;
                 if (!this.attribute('y').hasValue()) this.attribute('y', true).value = 0;
-                ctx.transform = ctx.transform.translated(this.attribute('x').toPixels('x'), this.attribute('y').toPixels('y'));
 
+                // As setSceneContext() is called with the ctx.transform value taken from stack,
+                // the local transformation should be applied at first
+                ctx.transform = new GTransform(
+                    1.0, 0, 0, 1.0, this.attribute('x').toPixels('x'), this.attribute('y').toPixels('y'))
+                    .multiplied(ctx.transform);
+
+                this.baseSetSceneContext(ctx);
                 var width = svg.ViewPort.width();
                 var height = svg.ViewPort.height();
 
