@@ -53,12 +53,14 @@
 
     /** @override */
     GCompoundPathEditor.prototype.applyTransform = function (element) {
+        element.beginUpdate();
         for (var i = 0; i < this._editors.length; ++i) {
             var ed = this._editors[i];
             if (ed.canApplyTransform()) {
                 ed.applyTransform(ed._element);
             }
         }
+        element.endUpdate();
     };
 
     /** @override */
@@ -179,7 +181,7 @@
         if (this._partSelection) {
             this._partSelection = null;
         }
-        if (!selection && this.hasFlag(GElementEditor.Flag.Selected)) {
+        if (!selection && this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
             for (var i = 0; i < this._editors.length; ++i) {
                 this._editors[i].updatePartSelection(toggle, null);
             }
@@ -223,10 +225,9 @@
     /** override */
     GCompoundPathEditor.prototype.isDeletePartsAllowed = function () {
         var res = false;
-        if (this.hasFlag(GElementEditor.Flag.Selected)) {
-            for (var pt = this._element.getPaths().getFirstChild(); pt != null && !res; pt = pt.getNext()) {
-                var pathEditor = GElementEditor.openEditor(pt);
-                res = pathEditor.isDeletePartsAllowed();
+        if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
+            for (var i = 0; i < this._editors.length && !res; ++i) {
+                res = this._editors[i].isDeletePartsAllowed();
             }
         }
         return res;
@@ -234,10 +235,12 @@
 
     /** override */
     GCompoundPathEditor.prototype.deletePartsSelected = function () {
-        for (var pt = this._element.getPaths().getFirstChild(); pt != null; pt = pt.getNext()) {
-            var pathEditor = GElementEditor.openEditor(pt);
-            if (pathEditor.isDeletePartsAllowed()) {
-                pathEditor.deletePartsSelected();
+        if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
+            for (var i = 0; i < this._editors.length; ++i) {
+                var pathEditor = this._editors[i];
+                if (pathEditor.isDeletePartsAllowed()) {
+                    pathEditor.deletePartsSelected();
+                }
             }
         }
     };
@@ -245,10 +248,9 @@
     /** override */
     GCompoundPathEditor.prototype.isAlignPartsAllowed = function () {
         var res = false;
-        if (this.hasFlag(GElementEditor.Flag.Selected)) {
-            for (var pt = this._element.getPaths().getFirstChild(); pt != null && !res; pt = pt.getNext()) {
-                var pathEditor = GElementEditor.openEditor(pt);
-                res = pathEditor.isAlignPartsAllowed();
+        if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
+            for (var i = 0; i < this._editors.length && !res; ++i) {
+                res = this._editors[i].isAlignPartsAllowed();
             }
         }
         return res;
@@ -256,11 +258,15 @@
 
     /** override */
     GCompoundPathEditor.prototype.alignParts = function (alignType, posX, posY) {
-        for (var pt = this._element.getPaths().getFirstChild(); pt != null; pt = pt.getNext()) {
-            var pathEditor = GElementEditor.openEditor(pt);
-            if (pathEditor.isAlignPartsAllowed()) {
-                pathEditor.alignParts(alignType, posX, posY);
+        if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
+            this._element.beginUpdate();
+            for (var i = 0; i < this._editors.length; ++i) {
+                var pathEditor = this._editors[i];
+                if (pathEditor.isAlignPartsAllowed()) {
+                    pathEditor.alignParts(alignType, posX, posY);
+                }
             }
+            this._element.endUpdate();
         }
     };
 
@@ -295,7 +301,9 @@
             this._flags = this._flags | flag;
             for (var pt = this._element.getPaths().getFirstChild(); pt != null; pt = pt.getNext()) {
                 var pathEditor = GElementEditor.openEditor(pt);
-                pathEditor.setFlag(flag);
+                if (pathEditor && !pathEditor.hasFlag(flag)) {
+                    pathEditor.setFlag(flag);
+                }
             }
             this.requestInvalidation();
         }
@@ -305,11 +313,12 @@
     GCompoundPathEditor.prototype.removeFlag = function (flag) {
         if ((this._flags & flag) != 0) {
             this.requestInvalidation();
-            this._flags = this._flags & ~flag;
-            for (var pt = this._element.getPaths().getFirstChild(); pt != null; pt = pt.getNext()) {
-                var pathEditor = GElementEditor.openEditor(pt);
-                pathEditor.removeFlag(flag);
+            if (this._editors) {
+                for (var i = 0; i < this._editors.length; ++i) {
+                    this._editors[i].removeFlag(flag);
+                }
             }
+            this._flags = this._flags & ~flag;
             this.requestInvalidation();
         }
     };

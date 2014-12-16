@@ -18,7 +18,7 @@
     GRectangleEditor.ANY_SHOULDER_PART_ID = GUtil.uuid();
 
     /** @override */
-    GEllipseEditor.prototype.getBBoxMargin = function () {
+    GRectangleEditor.prototype.getBBoxMargin = function () {
         var source = GPathBaseEditor.prototype.getBBoxMargin.call(this);
         if (this._showSegmentDetails()) {
             return Math.max(GElementEditor.OPTIONS.annotationSizeRegular + 1, source);

@@ -311,16 +311,10 @@
         Active: 1 << 3,
 
         /**
-         * Flag marking a node to be expanded
-         * @type {Number}
-         */
-        Expanded: 1 << 4,
-
-        /**
          * Flag marking a node to be transient
          * @type {Number}
          */
-        Transient: 1 << 5
+        Transient: 1 << 4
     };
 
     /**

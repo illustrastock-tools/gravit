@@ -176,19 +176,7 @@
     /** @override */
     GCompoundPath.prototype._handleChange = function (change, args) {
         this._handleVisualChangeForProperties(change, args, GCompoundPath.VisualProperties);
-        if (change == GNode._Change.AfterFlagChange) {
-            var flagArgs = args;
-            this._currentPath = this._paths.getFirstChild();
-            if (flagArgs.set == true) {
-                for (var pt = this._currentPath; pt != null; pt = pt.getNext()) {
-                    pt.setFlag(flagArgs.flag);
-                }
-            } else {
-                for (var pt = this._currentPath; pt != null; pt = pt.getNext()) {
-                    pt.removeFlag(flagArgs.flag);
-                }
-            }
-        }
+
         if (change === GNode._Change.Store) {
             this.storeProperties(args, GCompoundPath.VisualProperties);
             args.paths = this._paths.serialize();
@@ -215,6 +203,21 @@
         }
 
         GShape.prototype._handleChange.call(this, change, args);
+
+        if (change == GNode._Change.AfterFlagChange && args.set) {
+            // Note: it is important to set flags to child paths after we are completely done with the compound path parent
+            var flagArgs = args;
+            this._currentPath = this._paths.getFirstChild();
+            for (var pt = this._currentPath; pt != null; pt = pt.getNext()) {
+                pt.setFlag(flagArgs.flag);
+            }
+        } else if (change == GNode._Change.BeforeFlagChange && !args.set) {
+            var flagArgs = args;
+            this._currentPath = this._paths.getFirstChild();
+            for (var pt = this._currentPath; pt != null; pt = pt.getNext()) {
+                pt.removeFlag(flagArgs.flag);
+            }
+        }
     };
 
     /** @override */

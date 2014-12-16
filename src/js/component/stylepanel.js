@@ -233,7 +233,7 @@
 
                         $this.trigger('stylemove', [dragStyle, targetStyle]);
                     } else if (data.options.allowDrop) {
-                        $this.trigger('styledrop', [dragStyle, targetStyle, ]);
+                        $this.trigger('styledrop', [dragStyle, targetStyle]);
                     }
                 });
         }
