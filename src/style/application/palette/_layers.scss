@@ -28,6 +28,14 @@
         }
       }
 
+      &.g-drop {
+        background: $dragColor;
+
+        &, * {
+          color: $dragTextColor;
+        }
+      }
+
       > *:not(.jqtree-border) {
         display: table-cell;
         vertical-align: middle;
@@ -73,5 +81,51 @@
     ul.jqtree_common {
       margin-left: 0px;
     }
+  }
+
+  .vscroller {
+    position: absolute;
+    opacity: 0;
+    top: 0px;
+    left: 0px;
+    width: 1px;
+  }
+
+  .vrow {
+    position: absolute;
+    width: auto;
+    white-space: nowrap;
+    height: 30px;
+    max-height: 30px;
+    line-height: 30px;
+    vertical-align: middle;
+    padding-left: 50px;
+    border-bottom: solid 1px #dbd9d9;
+  }
+
+  .vexpand {
+    color: blue;
+  }
+
+  .insertInto {
+    color: lightskyblue;
+  }
+
+  .up-separator {
+    position: absolute;
+    height: 3px;
+    color: mediumblue;
+    line-height: 2px;
+    border-top: solid 2px mediumblue;
+    pointer-events: none;
+  }
+
+  .down-separator {
+    position: absolute;
+    height: 3px;
+    color: mediumblue;
+    line-height: 2px;
+    border-bottom: solid 2px mediumblue;
+    pointer-events: none;
   }
 }

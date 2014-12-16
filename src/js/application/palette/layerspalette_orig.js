@@ -39,12 +39,6 @@
      */
     GLayersPalette.prototype._layerDeleteControl = null;
 
-    /**
-     * @type {Boolean}
-     * @private
-     */
-    GLayersPalette.prototype._blockPropagation = false;
-
     /** @override */
     GLayersPalette.prototype.getId = function () {
         return GLayersPalette.ID;
@@ -78,14 +72,7 @@
 
         this._layersTree = $('<div></div>')
             .addClass('g-list layers')
-            .appendTo(htmlElement);
-        this._layersTree.gVTreePanel({
-                container: this._layersTree[0],
-                renderer: this._createLayerTreeItem.bind(this),
-                canDropCallback: this._canMoveLayerTreeNode.bind(this),
-                moveCallback:  this._moveLayerTreeNode.bind(this)
-            });
-            /*
+            .tree({
                 data: [],
                 dragAndDrop: true,
                 openFolderDelay: 500,
@@ -110,8 +97,8 @@
                 }
             }.bind(this))
             .on('tree.click', this._clickLayerTreeNode.bind(this))
-            .on('tree.move', this._moveLayerTreeNode.bind(this))*/
-
+            .on('tree.move', this._moveLayerTreeNode.bind(this))
+            .appendTo(htmlElement);
 
         this._layerAddControl =
             $('<button></button>')
@@ -144,7 +131,7 @@
             scene.addEventListener(GNode.BeforeRemoveEvent, this._beforeNodeRemove, this);
             scene.addEventListener(GNode.AfterPropertiesChangeEvent, this._afterPropertiesChange, this);
             scene.addEventListener(GNode.AfterFlagChangeEvent, this._afterFlagChange, this);
-            this._init();
+            this._clear();
             this.trigger(GPalette.UPDATE_EVENT);
         } else if (event.type === GApplication.DocumentEvent.Type.Deactivated) {
             var scene = this._document.getScene();
@@ -160,13 +147,10 @@
 
     /** @private */
     GLayersPalette.prototype._clear = function () {
-        this._layersTree.gVTreePanel('clean');
-        this._layersTreeNodeMap = [];
-    };
-
-    /** @private */
-    GLayersPalette.prototype._init = function () {
         // Clear layer tree and mark root opened afterwards (!!)
+        this._layersTree.tree('loadData', []);
+        this._layersTree.tree('getTree').is_open = true;
+
         this._layersTreeNodeMap = [];
 
         if (this._document) {
@@ -183,27 +167,30 @@
         // Create an unique treeId for the new tree node
         var treeId = GUtil.uuid();
 
-        this._layersTree.gVTreePanel('beginUpdate');
-
         // Either insert before or insert first but ensure to reverse order (last=top)
-        var previousNodeId = layerOrItem.getPrevious() ? this._getLayerTreeNodeId(layerOrItem.getPrevious()) : null;
-        if (previousNodeId) {
-            this._layersTree.gVTreePanel('addNodeBefore', treeId, previousNodeId);
+        var previousNode = layerOrItem.getPrevious() ? this._getLayerTreeNode(layerOrItem.getPrevious()) : null;
+        if (previousNode) {
+            this._layersTree.tree('addNodeBefore', {id: treeId, layerOrItem: layerOrItem}, previousNode);
         } else {
             var parent = layerOrItem.getParent();
-            var parentTreeNodeId = !parent || parent instanceof GScene ? null : this._getLayerTreeNodeId(parent);
-            var addBeforeNodeId = null;
+            var parentTreeNode = !parent || parent instanceof GScene ? null : this._getLayerTreeNode(parent);
+            var addBeforeNode = null;
 
-            if (parentTreeNodeId) {
-                if (parent.getFirstChild()) {
-                    addBeforeNodeId = this._getLayerTreeNodeId(parent.getFirstChild());
+            if (parentTreeNode) {
+                if (parentTreeNode.children && parentTreeNode.children.length) {
+                    addBeforeNode = parentTreeNode.children[0];
+                }
+            } else {
+                var root = this._layersTree.tree('getTree');
+                if (root && root.children && root.children.length) {
+                    addBeforeNode = root.children[0];
                 }
             }
 
-            if (addBeforeNodeId) {
-                this._layersTree.gVTreePanel('addNodeBefore', treeId, addBeforeNodeId);
+            if (addBeforeNode) {
+                this._layersTree.tree('addNodeBefore', {id: treeId, layerOrItem: layerOrItem}, addBeforeNode);
             } else {
-                this._layersTree.gVTreePanel('prependNode', treeId, parentTreeNodeId);
+                this._layersTree.tree('appendNode', {id: treeId, layerOrItem: layerOrItem}, parentTreeNode);
             }
         }
 
@@ -214,18 +201,17 @@
         });
 
         // Make an initial update
-        //this._updateLayer(layerOrItem);
+        this._updateLayer(layerOrItem);
 
         // Iterate children and add them as well
         if (layerOrItem.hasMixin(GNode.Container)) {
-
             for (var child = layerOrItem.getFirstChild(); child !== null; child = child.getNext()) {
                 if (child instanceof GLayer || child instanceof GItem) {
                     this._insertLayer(child);
                 }
             }
         }
-        /*
+
         // Gather the new treenode for our node
         var treeNode = this._getLayerTreeNode(layerOrItem);
 
@@ -237,42 +223,40 @@
         // Open entry if collapsed
         if (layerOrItem.hasFlag(GNode.Flag.Expanded)) {
             this._layersTree.tree('openNode', treeNode, false);
-        } */
-        this._layersTree.gVTreePanel('endUpdate');
+        }
     };
 
     /** @private */
     GLayersPalette.prototype._updateLayer = function (layerOrItem) {
         // Gather a tree node for the item
-        var treeNodeId = this._getLayerTreeNodeId(layerOrItem);
+        var treeNode = this._getLayerTreeNode(layerOrItem);
 
-        if (treeNodeId) {
-            this._layersTree.gVTreePanel('requestInvalidation');
+        if (treeNode) {
+            // Call an update for the node
+            var label = layerOrItem.getLabel();
+
+            this._layersTree.tree('updateNode', treeNode, label);
         }
     };
 
     /** @private */
     GLayersPalette.prototype._removeLayer = function (layerOrItem) {
-        var treeNodeId = this._getLayerTreeNodeId(layerOrItem);
-        if (treeNodeId) {
-            this._layersTree.gVTreePanel('removeNode', treeNodeId);
+        var treeNode = this._getLayerTreeNode(layerOrItem);
+        if (treeNode) {
+            this._layersTree.tree('removeNode', treeNode);
 
-            this._removeNodeFromMap(layerOrItem);
-        }
-    };
-
-    GLayersPalette.prototype._removeNodeFromMap = function (layerOrItem) {
-        // Visit to remove each mapping as well
-        layerOrItem.accept(function (node) {
-            if (node instanceof GLayer || node instanceof GItem) {
-                for (var i = 0; i < this._layersTreeNodeMap.length; ++i) {
-                    if (this._layersTreeNodeMap[i].node === node) {
-                        this._layersTreeNodeMap.splice(i, 1);
-                        break;
+            // Visit to remove each mapping as well
+            layerOrItem.accept(function (node) {
+                if (node instanceof GLayer || node instanceof GItem) {
+                    for (var i = 0; i < this._layersTreeNodeMap.length; ++i) {
+                        if (this._layersTreeNodeMap[i].node === node) {
+                            this._layersTreeNodeMap.splice(i, 1);
+                            break;
+                        }
                     }
                 }
-            }
-        }.bind(this));
+            }.bind(this));
+        }
     };
 
     /**
@@ -280,7 +264,7 @@
      * @private
      */
     GLayersPalette.prototype._afterNodeInsert = function (event) {
-        if (!this._blockPropagation && (event.node instanceof GLayer || event.node instanceof GItem)) {
+        if (event.node instanceof GLayer || event.node instanceof GItem) {
             this._insertLayer(event.node);
         }
     };
@@ -290,11 +274,11 @@
      * @private
      */
     GLayersPalette.prototype._beforeNodeRemove = function (event) {
-        if (!this._blockPropagation && (event.node instanceof GLayer || event.node instanceof GItem)) {
+        if (event.node instanceof GLayer || event.node instanceof GItem) {
             this._removeLayer(event.node);
 
             // If parent has no more children then update it accordingly
-            /*var parent = event.node.getParent();
+            var parent = event.node.getParent();
 
             if (parent instanceof GLayer || parent instanceof GItem) {
                 var hasChildren = false;
@@ -309,7 +293,7 @@
                     parent.removeFlag(GNode.Flag.Expanded);
                     this._updateLayer(parent);
                 }
-            } */
+            }
         }
     };
 
@@ -318,7 +302,7 @@
      * @private
      */
     GLayersPalette.prototype._afterPropertiesChange = function (event) {
-        if (!this._blockPropagation && (event.node instanceof GLayer || event.node instanceof GItem)) {
+        if (event.node instanceof GLayer || event.node instanceof GItem) {
             this._updateLayer(event.node);
         }
     };
@@ -328,14 +312,12 @@
      * @private
      */
     GLayersPalette.prototype._afterFlagChange = function (event) {
-        if (!this._blockPropagation) {
-            if (event.node instanceof GLayer && (event.flag === GNode.Flag.Active || event.flag === GNode.Flag.Selected || event.flag === GNode.Flag.Expanded)) {
-                this._updateLayer(event.node);
-            } else if (event.node instanceof GItem && event.flag === GNode.Flag.Selected) {
-                this._updateLayer(event.node);
-            } else if ((event.node instanceof GLayer || event.node instanceof GItem) && (event.flag === GElement.Flag.Hidden || event.flag === GElement.Flag.PartialLocked || event.flag === GElement.Flag.FullLocked)) {
-                this._updateLayer(event.node);
-            }
+        if (event.node instanceof GLayer && (event.flag === GNode.Flag.Active || event.flag === GNode.Flag.Selected || event.flag === GNode.Flag.Expanded)) {
+            this._updateLayer(event.node);
+        } else if (event.node instanceof GItem && event.flag === GNode.Flag.Selected) {
+            this._updateLayer(event.node);
+        } else if ((event.node instanceof GLayer || event.node instanceof GItem) && (event.flag === GElement.Flag.Hidden || event.flag === GElement.Flag.PartialLocked || event.flag === GElement.Flag.FullLocked)) {
+            this._updateLayer(event.node);
         }
     };
 
@@ -357,9 +339,10 @@
     };
 
     /** @private */
-    GLayersPalette.prototype._createLayerTreeItem = function (nodeId, row) {
-        var layerOrItem = this._getNodeByTreeId(nodeId);
-        if (layerOrItem) {
+    GLayersPalette.prototype._createLayerTreeItem = function (node, li) {
+        if (node.layerOrItem) {
+            var layerOrItem = node.layerOrItem;
+
             // Iterate parents up and collect some information
             var itemLevel = 0;
             var parentHidden = false;
@@ -400,15 +383,11 @@
             var isOutlined = parentOutlined || (layerOrItem instanceof GLayer && layerOrItem.getProperty('otl'));
 
             // Gather a reference to the element container
-            var container = row;
-            var nodeName = layerOrItem.getProperty('name');
-            nodeName = nodeName ? nodeName : layerOrItem.getNodeNameTranslated();
-            var title = $('<span></span>').html(nodeName);
-            title.addClass('jqtree-title')
-                .appendTo(container);
+            var container = li.find('div.jqtree-element');
+            var title = container.find('> .jqtree-title');
 
             // First, we'll make our title editable and toogle active/selected
-            $(container)
+            container
                 .toggleClass('g-active', layerOrItem.hasFlag(GNode.Flag.Active))
                 .toggleClass('g-selected', layerOrItem.hasFlag(GNode.Flag.Selected))
                 .gAutoEdit({
@@ -587,44 +566,72 @@
     };
 
     /** @private */
-    GLayersPalette.prototype._canMoveLayerTreeNode = function (parentNodeId, refNodeId, movedNodeId) {
-        return this._getLayerTreeNodeMoveInfo(parentNodeId, refNodeId, movedNodeId) !== null;
+    GLayersPalette.prototype._canMoveLayerTreeNode = function (moved_node, target_node, position) {
+        return this._getLayerTreeNodeMoveInfo(position, moved_node.layerOrItem, target_node.layerOrItem) !== null;
     };
 
     /** @private */
-    GLayersPalette.prototype._moveLayerTreeNode = function (parentNodeId, refNodeId, movedNodeId) {
-        var moveInfo = this._getLayerTreeNodeMoveInfo(parentNodeId, refNodeId, movedNodeId);
+    GLayersPalette.prototype._moveLayerTreeNode = function (event) {
+        event.preventDefault();
+
+        var moveInfo = this._getLayerTreeNodeMoveInfo(event.move_info.position,
+            event.move_info.moved_node.layerOrItem, event.move_info.target_node.layerOrItem);
+
         if (moveInfo) {
-            this._blockPropagation = true;
             // TODO : I18N
             GEditor.tryRunTransaction(this._document.getScene(), function () {
                 moveInfo.source.getParent().removeChild(moveInfo.source);
                 moveInfo.parent.insertChild(moveInfo.source, moveInfo.before);
-            }.bind(this), 'Move Layer/Item');
 
-            this._blockPropagation = false;
+                // Having dragged something inside requires to expand parent(s) and update 'em'
+                var rootParent = null;
+                for (var parent = moveInfo.parent; parent !== null; parent = parent.getParent()) {
+                    if (parent instanceof GScene) {
+                        break;
+                    }
+
+                    parent.setFlag(GNode.Flag.Expanded);
+                    rootParent = parent;
+                }
+
+                this._updateLayer(rootParent);
+            }.bind(this), 'Move Layer/Item');
         }
     };
 
     /**
-     * @param {*} parentNodeId
-     * @param {*} refNodeId
-     * @param {*} movedNodeId
+     * @param event
      * @return {{parent: GNode, before: GNode, source: GNode}} the result of the move
      * or null if the actual move is not allowed
      * @private
      */
-    GLayersPalette.prototype._getLayerTreeNodeMoveInfo = function (parentNodeId, refNodeId, movedNodeId) {
-        var parent = parentNodeId ? this._getNodeByTreeId(parentNodeId) : this._document.getScene();
-        var before = refNodeId ? this._getNodeByTreeId(refNodeId) : null;
-        var source = movedNodeId ? this._getNodeByTreeId(movedNodeId) : null;
+    GLayersPalette.prototype._getLayerTreeNodeMoveInfo = function (position, source, target) {
+        target = target || this._document.getScene();
 
-        if (source && parent && source.validateInsertion(parent, before)) {
-            return {
-                parent: parent,
-                before: before,
-                source: source
-            };
+        if (source && target && position !== 'none') {
+            var parent = null;
+            var before = null;
+
+            if (position === 'inside') {
+                parent = target;
+                before = null;
+            } else if (position == 'after') {
+                parent = target.getParent();
+                before = target;
+            }
+
+            if (before === source) {
+                // we can not insert before ourself
+                return null;
+            }
+
+            if (source.validateInsertion(parent, before)) {
+                return {
+                    parent: parent,
+                    before: before,
+                    source: source
+                };
+            }
         }
 
         return null;
@@ -646,28 +653,13 @@
     };
 
     /**
-     * @param {*} nodeId
-     * @return {GNode}
-     * @private
-     */
-    GLayersPalette.prototype._getNodeByTreeId = function (nodeId) {
-        if (this._layersTreeNodeMap) {
-            for (var i = 0; i < this._layersTreeNodeMap.length; ++i) {
-                if (this._layersTreeNodeMap[i].treeId === nodeId) {
-                    return this._layersTreeNodeMap[i].node;
-                }
-            }
-        }
-    };
-
-    /**
      * @param {GNode} node
      * @return {*}
      * @private
      */
-/*    GLayersPalette.prototype._getLayerTreeNode = function (node) {
+    GLayersPalette.prototype._getLayerTreeNode = function (node) {
         return this._layersTree.tree('getNodeById', this._getLayerTreeNodeId(node));
-    };  */
+    };
 
     /** @override */
     GLayersPalette.prototype.toString = function () {
