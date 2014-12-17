@@ -94,7 +94,7 @@
                 slide: false,
                 selectable: false,
                 onIsMoveHandle: function ($element) {
-                    return ($element.is('.jqtree-title'));
+                    return ($element.is('.layer-title'));
                 },
                 onCreateLi: this._createLayerTreeItem.bind(this),
                 onCanMoveTo: this._canMoveLayerTreeNode.bind(this)
@@ -404,7 +404,7 @@
             var nodeName = layerOrItem.getProperty('name');
             nodeName = nodeName ? nodeName : layerOrItem.getNodeNameTranslated();
             var title = $('<span></span>').html(nodeName);
-            title.addClass('jqtree-title')
+            title.addClass('layer-title')
                 .appendTo(container);
 
             // First, we'll make our title editable and toogle active/selected
@@ -412,7 +412,7 @@
                 .toggleClass('g-active', layerOrItem.hasFlag(GNode.Flag.Active))
                 .toggleClass('g-selected', layerOrItem.hasFlag(GNode.Flag.Selected))
                 .gAutoEdit({
-                    selector: '> .jqtree-title'
+                    selector: '> .layer-title'
                 })
                 .on('submitvalue', function (evt, value) {
                     // TODO : I18M

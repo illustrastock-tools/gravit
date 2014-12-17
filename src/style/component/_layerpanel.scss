@@ -37,7 +37,7 @@
         }
       }
 
-      > *:not(.jqtree-border) {
+      > * {
         display: table-cell;
         vertical-align: middle;
         padding: 4px 0px;
@@ -66,13 +66,13 @@
           max-width: 8px;
         }
 
-        &.jqtree-toggler, &.layer-spacer {
+        &.layer-toggler, &.layer-spacer {
           min-width: 8px;
           max-width: 8px;
           padding-left: 5px;
         }
 
-        &.jqtree-title {
+        &.layer-title {
           width: 100%;
           padding-left: 5px;
         }
