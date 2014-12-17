@@ -14,7 +14,8 @@
         "Blob.js": "git://github.com/eligrey/Blob.js.git#latest",
         "canvas-toBlob.js": "git://github.com/eligrey/canvas-toBlob.js.git#latest",
         "vex": "latest",
-        "jdataview": "latest"
+        "jdataview": "latest",
+        "virtual-ui.js": "git://github.com/quasado/virtual-ui.js.git#latest"
     },
     "devDependencies": {},
     "private": true

@@ -2,6 +2,7 @@
 
 @import 'application/3rdparty/vex';
 @import 'application/3rdparty/jqtree';
+@import 'application/3rdparty/virtual-ui.js';
 
 @import 'application/fonts';
 @import 'application/base';
@@ -17,7 +18,7 @@
 
 @import 'application/palette/color';
 @import 'application/palette/export';
-@import 'application/palette/layers';
+@import 'component/_layerpanel';
 @import 'application/palette/pages';
 @import 'application/palette/style';
 @import 'application/palette/styles';

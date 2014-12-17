@@ -77,10 +77,10 @@
         gApp.addEventListener(GApplication.DocumentEvent, this._documentEvent, this);
 
         this._layersTree = $('<div></div>')
-            .addClass('g-list layers')
+            .addClass('layers vtree')
             .appendTo(htmlElement);
-        this._layersTree.gVTreePanel({
-                container: this._layersTree[0],
+        this._layersTree.gLayerPanel({
+                container: $(this._layersTree)[0],
                 renderer: this._createLayerTreeItem.bind(this),
                 canDropCallback: this._canMoveLayerTreeNode.bind(this),
                 moveCallback:  this._moveLayerTreeNode.bind(this)
@@ -160,7 +160,7 @@
 
     /** @private */
     GLayersPalette.prototype._clear = function () {
-        this._layersTree.gVTreePanel('clean');
+        this._layersTree.gLayerPanel('clean');
         this._layersTreeNodeMap = [];
     };
 
@@ -183,12 +183,12 @@
         // Create an unique treeId for the new tree node
         var treeId = GUtil.uuid();
 
-        this._layersTree.gVTreePanel('beginUpdate');
+        this._layersTree.gLayerPanel('beginUpdate');
 
         // Either insert before or insert first but ensure to reverse order (last=top)
         var previousNodeId = layerOrItem.getPrevious() ? this._getLayerTreeNodeId(layerOrItem.getPrevious()) : null;
         if (previousNodeId) {
-            this._layersTree.gVTreePanel('addNodeBefore', treeId, previousNodeId);
+            this._layersTree.gLayerPanel('addNodeBefore', treeId, previousNodeId);
         } else {
             var parent = layerOrItem.getParent();
             var parentTreeNodeId = !parent || parent instanceof GScene ? null : this._getLayerTreeNodeId(parent);
@@ -201,9 +201,9 @@
             }
 
             if (addBeforeNodeId) {
-                this._layersTree.gVTreePanel('addNodeBefore', treeId, addBeforeNodeId);
+                this._layersTree.gLayerPanel('addNodeBefore', treeId, addBeforeNodeId);
             } else {
-                this._layersTree.gVTreePanel('prependNode', treeId, parentTreeNodeId);
+                this._layersTree.gLayerPanel('prependNode', treeId, parentTreeNodeId);
             }
         }
 
@@ -238,7 +238,7 @@
         if (layerOrItem.hasFlag(GNode.Flag.Expanded)) {
             this._layersTree.tree('openNode', treeNode, false);
         } */
-        this._layersTree.gVTreePanel('endUpdate');
+        this._layersTree.gLayerPanel('endUpdate');
     };
 
     /** @private */
@@ -247,7 +247,7 @@
         var treeNodeId = this._getLayerTreeNodeId(layerOrItem);
 
         if (treeNodeId) {
-            this._layersTree.gVTreePanel('requestInvalidation');
+            this._layersTree.gLayerPanel('requestInvalidation');
         }
     };
 
@@ -255,7 +255,7 @@
     GLayersPalette.prototype._removeLayer = function (layerOrItem) {
         var treeNodeId = this._getLayerTreeNodeId(layerOrItem);
         if (treeNodeId) {
-            this._layersTree.gVTreePanel('removeNode', treeNodeId);
+            this._layersTree.gLayerPanel('removeNode', treeNodeId);
 
             this._removeNodeFromMap(layerOrItem);
         }
