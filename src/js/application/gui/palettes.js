@@ -126,7 +126,7 @@
     GPalettes.prototype.isPaletteEnabled = function (paletteId) {
         var paletteInfo = this._getPaletteInfo(paletteId);
         if (paletteInfo) {
-            return paletteInfo.panel.find('.panel-disabled-overlay').length == 0;
+            return paletteInfo.panel.find('.g-disabled-overlay').length == 0;
         }
         return false;
     };
@@ -389,6 +389,9 @@
                 paletteInfo.panel.css('height', spacePerPalette.toString() + 'px');
             } else {
                 paletteInfo.panel.css('height', paletteInfo.savedHeight);
+            }
+            if (paletteInfo.palette.refresh) {
+                paletteInfo.palette.refresh();
             }
         }
     };

@@ -77,41 +77,16 @@
         gApp.addEventListener(GApplication.DocumentEvent, this._documentEvent, this);
 
         this._layersTree = $('<div></div>')
-            .addClass('layers vtree')
+            .addClass('g-list layers vtree')
             .appendTo(htmlElement);
+
         this._layersTree.gLayerPanel({
                 container: $(this._layersTree)[0],
                 renderer: this._createLayerTreeItem.bind(this),
                 canDropCallback: this._canMoveLayerTreeNode.bind(this),
-                moveCallback:  this._moveLayerTreeNode.bind(this)
+                moveCallback: this._moveLayerTreeNode.bind(this),
+                clickCallback: this._clickLayerTreeNode.bind(this)
             });
-            /*
-                data: [],
-                dragAndDrop: true,
-                openFolderDelay: 500,
-                closedIcon: $('<span class="fa fa-caret-right"></span>'),
-                openedIcon: $('<span class="fa fa-caret-down"></span>'),
-                slide: false,
-                selectable: false,
-                onIsMoveHandle: function ($element) {
-                    return ($element.is('.layer-title'));
-                },
-                onCreateLi: this._createLayerTreeItem.bind(this),
-                onCanMoveTo: this._canMoveLayerTreeNode.bind(this)
-            })
-            .on('tree.open', function (evt) {
-                if (evt.node.layerOrItem) {
-                    evt.node.layerOrItem.setFlag(GNode.Flag.Expanded);
-                }
-            }.bind(this))
-            .on('tree.close', function (evt) {
-                if (evt.node.layerOrItem) {
-                    evt.node.layerOrItem.removeFlag(GNode.Flag.Expanded);
-                }
-            }.bind(this))
-            .on('tree.click', this._clickLayerTreeNode.bind(this))
-            .on('tree.move', this._moveLayerTreeNode.bind(this))*/
-
 
         this._layerAddControl =
             $('<button></button>')
@@ -134,6 +109,10 @@
                 .append($('<span></span>')
                     .addClass('fa fa-trash-o'))
                 .appendTo(controls);
+    };
+
+    GLayersPalette.prototype.refresh = function () {
+        this._layersTree.gLayerPanel('refresh');
     };
 
     GLayersPalette.prototype._documentEvent = function (event) {
@@ -213,9 +192,6 @@
             treeId: treeId
         });
 
-        // Make an initial update
-        //this._updateLayer(layerOrItem);
-
         // Iterate children and add them as well
         if (layerOrItem.hasMixin(GNode.Container)) {
 
@@ -225,19 +201,7 @@
                 }
             }
         }
-        /*
-        // Gather the new treenode for our node
-        var treeNode = this._getLayerTreeNode(layerOrItem);
 
-        // Select if item and selected
-        if (layerOrItem instanceof GItem && layerOrItem.hasFlag(GNode.Flag.Selected)) {
-            this._layersTree.tree('selectNode', treeNode);
-        }
-
-        // Open entry if collapsed
-        if (layerOrItem.hasFlag(GNode.Flag.Expanded)) {
-            this._layersTree.tree('openNode', treeNode, false);
-        } */
         this._layersTree.gLayerPanel('endUpdate');
     };
 
@@ -292,24 +256,6 @@
     GLayersPalette.prototype._beforeNodeRemove = function (event) {
         if (!this._blockPropagation && (event.node instanceof GLayer || event.node instanceof GItem)) {
             this._removeLayer(event.node);
-
-            // If parent has no more children then update it accordingly
-            /*var parent = event.node.getParent();
-
-            if (parent instanceof GLayer || parent instanceof GItem) {
-                var hasChildren = false;
-                for (var child = parent.getFirstChild(); child !== null; child = child.getNext()) {
-                    if ((child instanceof GLayer || child instanceof GItem) && child !== event.node) {
-                        hasChildren = true;
-                        break;
-                    }
-                }
-
-                if (!hasChildren) {
-                    parent.removeFlag(GNode.Flag.Expanded);
-                    this._updateLayer(parent);
-                }
-            } */
         }
     };
 
@@ -329,35 +275,38 @@
      */
     GLayersPalette.prototype._afterFlagChange = function (event) {
         if (!this._blockPropagation) {
-            if (event.node instanceof GLayer && (event.flag === GNode.Flag.Active || event.flag === GNode.Flag.Selected || event.flag === GNode.Flag.Expanded)) {
-                this._updateLayer(event.node);
-            } else if (event.node instanceof GItem && event.flag === GNode.Flag.Selected) {
-                this._updateLayer(event.node);
-            } else if ((event.node instanceof GLayer || event.node instanceof GItem) && (event.flag === GElement.Flag.Hidden || event.flag === GElement.Flag.PartialLocked || event.flag === GElement.Flag.FullLocked)) {
+            if ((event.node instanceof GLayer || event.node instanceof GItem) &&
+                (event.flag === GElement.Flag.Hidden ||
+                event.flag === GElement.Flag.PartialLocked ||
+                event.flag === GElement.Flag.FullLocked ||
+                event.flag === GNode.Flag.Selected) ||
+                event.node instanceof GLayer && (event.flag === GNode.Flag.Active)) {
+
                 this._updateLayer(event.node);
             }
         }
     };
 
     /** @private */
-    GLayersPalette.prototype._clickLayerTreeNode = function (evt) {
-        if (evt.node.layerOrItem) {
-            if (evt.node.layerOrItem instanceof GLayer) {
-                this._document.getScene().setActiveLayer(evt.node.layerOrItem);
-            } else if (evt.node.layerOrItem instanceof GItem) {
-                if (ifPlatform.modifiers.shiftKey || !evt.node.layerOrItem.hasFlag(GNode.Flag.Selected)) {
+    GLayersPalette.prototype._clickLayerTreeNode = function (nodeId) {
+        var layerOrItem = this._getNodeByTreeId(nodeId);
+        if (layerOrItem) {
+            if (layerOrItem instanceof GLayer) {
+                this._document.getScene().setActiveLayer(layerOrItem);
+            } else if (layerOrItem instanceof GItem) {
+                if (ifPlatform.modifiers.shiftKey || !layerOrItem.hasFlag(GNode.Flag.Selected)) {
                     // Add element to selection
-                    this._document.getEditor().updateSelection(ifPlatform.modifiers.shiftKey, [evt.node.layerOrItem]);
-                } else if (evt.node.layerOrItem.hasFlag(GNode.Flag.Selected)) {
+                    this._document.getEditor().updateSelection(ifPlatform.modifiers.shiftKey, [layerOrItem]);
+                } else if (layerOrItem.hasFlag(GNode.Flag.Selected)) {
                     // Clear selection leaving only the one element
-                    this._document.getEditor().clearSelection([evt.node.layerOrItem]);
+                    this._document.getEditor().clearSelection([layerOrItem]);
                 }
             }
         }
     };
 
     /** @private */
-    GLayersPalette.prototype._createLayerTreeItem = function (nodeId, row) {
+    GLayersPalette.prototype._createLayerTreeItem = function (nodeId, expanded, row) {
         var layerOrItem = this._getNodeByTreeId(nodeId);
         if (layerOrItem) {
             // Iterate parents up and collect some information
@@ -433,7 +382,7 @@
             // Figure an icon for the item if any
             var icon = null;
             if (layerOrItem instanceof GLayer) {
-                icon = layerOrItem.hasFlag(GNode.Flag.Expanded) ? 'folder-open' : 'folder';
+                icon = expanded ? 'folder-open' : 'folder';
             } else if (layerOrItem instanceof GSlice) {
                 icon = 'crop';
             } else if (layerOrItem instanceof GShape) {
@@ -659,15 +608,6 @@
             }
         }
     };
-
-    /**
-     * @param {GNode} node
-     * @return {*}
-     * @private
-     */
-/*    GLayersPalette.prototype._getLayerTreeNode = function (node) {
-        return this._layersTree.tree('getNodeById', this._getLayerTreeNodeId(node));
-    };  */
 
     /** @override */
     GLayersPalette.prototype.toString = function () {

@@ -8,10 +8,23 @@
     min-height: 184px;
     height: 100%;
     margin-left: 0px;
+    margin-bottom: 0;
+    margin-top: 0px;
 
-    div.vrow {
-      padding: 0px;
+    &, * {
+      line-height: 1;
+    }
+
+    div.layer-row {
+      height: auto;
+      line-height: 23px !important;
+      margin: 0px;
       border-bottom: 1px solid $borderColor;
+      position: absolute;
+      width: 100%;
+      *width: auto;
+      white-space: nowrap;
+      vertical-align: middle;
 
       &.g-active {
         background: $activeColor;
@@ -41,6 +54,7 @@
         display: table-cell;
         vertical-align: middle;
         padding: 4px 0px;
+        vertical-align: middle;
 
         &.layer-visibility, &.layer-lock, &.layer-outline {
           border-right: 1px solid $borderColor;
@@ -73,8 +87,12 @@
         }
 
         &.layer-title {
+          vertical-align: middle;
+          margin-left: 0;
           width: 100%;
+          padding-top: 5px;
           padding-left: 5px;
+          line-height: 1 !important;
         }
       }
     }

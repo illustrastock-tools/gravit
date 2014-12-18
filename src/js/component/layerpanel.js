@@ -29,11 +29,19 @@
         }
     };
 
+    function nodeClick(node) {
+        var $this = $(this);
+        var data = $this.data('glayerpanel');
+        if (data.options.clickCallback) {
+            data.options.clickCallback(node.id);
+        }
+    };
+
     function renderer(node, row) {
         var $this = $(this);
         var data = $this.data('glayerpanel');
         if (data.options.renderer) {
-            data.options.renderer(node.id, row);
+            data.options.renderer(node.id, node.expanded, row);
         }
     };
 
@@ -66,11 +74,11 @@
                 // {Function(TreeNode, Element)} renderer to fill the tree node visible element with content
                 renderer: null,
                 // {String} a tree node visible element CSS style name. If not passed, the default style name is used.
-                nodeStyle: 'vrow',
+                nodeStyle: 'layer-row',
                 // {Function(Element)} renderer for the 'expand' span element
                 expandRenderer: expandRenderer,
-                expandStyle: 'fa fa-caret-right',
-                collapseStyle: 'fa fa-caret-down',
+                expandStyle: 'layer-icon fa fa-caret-right',
+                collapseStyle: 'layer-icon fa fa-caret-down',
                 freeHeight: 7,
                 insertIntoStyle: 'g-drop',
                 upSeparatorStyle: 'up-separator',
@@ -78,7 +86,8 @@
                 paddingLeft: 50,
                 rowHeight: 30,
                 canDropCallback: null,
-                moveCallback: null
+                moveCallback: null,
+                clickCallback: null
             }, options);
 
             return this.each(function () {
@@ -87,7 +96,7 @@
                 $this.data('glayerpanel', {
                         vtree: new VTree(options.container, renderer.bind($(this)), options.nodeStyle,
                             options.expandRenderer.bind($(this)),
-                            null, canDrop.bind($(this)), moveHere.bind($(this))),
+                            null, canDrop.bind($(this)), moveHere.bind($(this)), nodeClick.bind($(this))),
                         options: options
                     });
             });
@@ -132,6 +141,10 @@
 
         clean: function () {
             $(this).data('glayerpanel').vtree.clean();
+        },
+
+        refresh: function () {
+            $(this).data('glayerpanel').vtree.refresh();
         }
     };
 
