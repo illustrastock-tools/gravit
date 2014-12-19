@@ -323,7 +323,7 @@
                 if (part.type === GPathEditor.PartType.Point) {
                     if (i == this._partSelection.length - 1) {
                         element._endBlockEvents([GElement.GeometryChangeEvent]);
-                        element.getAnchorPoints()._endBlockCompositeEvents(true, true, true);
+                        element.getAnchorPoints()._endBlockCompositeEvents(false, true, false);
                     }
                     this._transferPreviewProperties(part.point, element);
                     newSelection.push(part);
