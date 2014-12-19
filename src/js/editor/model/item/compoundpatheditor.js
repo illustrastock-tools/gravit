@@ -53,12 +53,14 @@
 
     /** @override */
     GCompoundPathEditor.prototype.applyTransform = function (element) {
+        element.beginUpdate();
         for (var i = 0; i < this._editors.length; ++i) {
             var ed = this._editors[i];
             if (ed.canApplyTransform()) {
                 ed.applyTransform(ed._element);
             }
         }
+        element.endUpdate();
     };
 
     /** @override */
@@ -224,8 +226,8 @@
     GCompoundPathEditor.prototype.isDeletePartsAllowed = function () {
         var res = false;
         if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
-            for (var i = 0; i < this._editors.length; ++i) {
-                this._editors[i].isDeletePartsAllowed();
+            for (var i = 0; i < this._editors.length && !res; ++i) {
+                res = this._editors[i].isDeletePartsAllowed();
             }
         }
         return res;
@@ -247,8 +249,8 @@
     GCompoundPathEditor.prototype.isAlignPartsAllowed = function () {
         var res = false;
         if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
-            for (var i = 0; i < this._editors.length; ++i) {
-                this._editors[i].isAlignPartsAllowed();
+            for (var i = 0; i < this._editors.length && !res; ++i) {
+                res = this._editors[i].isAlignPartsAllowed();
             }
         }
         return res;
@@ -257,12 +259,14 @@
     /** override */
     GCompoundPathEditor.prototype.alignParts = function (alignType, posX, posY) {
         if (this.hasFlag(GElementEditor.Flag.Selected) && this._editors) {
+            this._element.beginUpdate();
             for (var i = 0; i < this._editors.length; ++i) {
                 var pathEditor = this._editors[i];
                 if (pathEditor.isAlignPartsAllowed()) {
                     pathEditor.alignParts(alignType, posX, posY);
                 }
             }
+            this._element.endUpdate();
         }
     };
 
