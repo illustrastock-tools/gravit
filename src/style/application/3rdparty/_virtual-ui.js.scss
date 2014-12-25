@@ -36,7 +36,7 @@
     max-height: 30px;
     line-height: 30px;
     vertical-align: middle;
-    padding-left: 10px;
+    padding-left: 50px;
     border-bottom: solid 1px #dbd9d9;
   }
 
@@ -48,18 +48,20 @@
     color: lightskyblue;
   }
 
-  .up-separator {
+  .up-separator-span1 {
     position: absolute;
-    height: 3px;
+    width: 100%;
+    height: inherit;
     color: mediumblue;
     line-height: 2px;
     border-top: solid 2px mediumblue;
     pointer-events: none;
   }
 
-  .down-separator {
+  .down-separator-span1 {
     position: absolute;
-    height: 3px;
+    width: 100%;
+    height: inherit;
     color: mediumblue;
     line-height: 2px;
     border-bottom: solid 2px mediumblue;

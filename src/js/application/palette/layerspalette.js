@@ -354,6 +354,13 @@
             nodeName = nodeName ? nodeName : layerOrItem.getNodeNameTranslated();
             var title = $('<span></span>').html(nodeName);
             title.addClass('layer-title')
+                .attr('draggable', true)
+                .on('dragstart', function(evt) {
+                    $(this).addClass('g-dragging');
+                    setTimeout(function() {
+                        $(this).removeClass('g-dragging');
+                    }.bind($(this)), 0);
+                })
                 .appendTo(container);
 
             // First, we'll make our title editable and toogle active/selected
