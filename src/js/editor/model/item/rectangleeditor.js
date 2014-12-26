@@ -37,8 +37,8 @@
             }
 
             var pe = this.getPaintElement();
-            var newPos = guides.mapPoint(position);
-            newPos = viewToWorldTransform.mapPoint(newPos);
+            var newPos = viewToWorldTransform.mapPoint(position);
+            newPos = guides.mapPoint(newPos);
             var trf = pe.getTransform() || new GTransform();
             var trfInv = trf.inverted();
             newPos = trfInv.mapPoint(newPos);
