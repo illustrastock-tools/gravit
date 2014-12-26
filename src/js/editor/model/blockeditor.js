@@ -147,7 +147,10 @@
      * to show resize handles
      */
     GBlockEditor.prototype._iterateResizeHandles = function (iterator, transform) {
-        var bbox = this.getPaintElement().getGeometryBBox();
+        var trf = this.getPaintElement().getTransform() || new GTransform();
+        var bbox = this.getPaintElement().getSourceBBox ? this.getPaintElement().getSourceBBox() : trf.inverted().mapRect(this.getPaintElement().getGeometryBBox());//.getGeometryBBox();
+
+
 
         if (bbox && !bbox.isEmpty()) {
             var sides = [];
@@ -172,7 +175,7 @@
 
             for (var i = 0; i < sides.length; ++i) {
                 var side = sides[i];
-                var point = bbox.getSide(side);
+                var point = trf.mapPoint(bbox.getSide(side));
                 if (iterator(point, side) === true) {
                     break;
                 }

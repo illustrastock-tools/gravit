@@ -40,7 +40,10 @@
         bl_uf: true,
         bl_ct: GPathBase.CornerType.Rounded,
         bl_sx: 0,
-        bl_sy: 0
+        bl_sy: 0,
+
+        w: 0,
+        h: 0
     };
 
     /**
@@ -79,6 +82,9 @@
     GRectangle.prototype.iterateSegments = function (iterator, includeTransform) {
         var transform = includeTransform ? this.$trf : null;
 
+        var w = this.$w;
+        var h = this.$h;
+
         for (var i = 0; i < GRectangle.SIDES.length; ++i) {
             var side = GRectangle.SIDES[i];
             var prefix = GRectangle.getGeometryPropertiesSidePrefix(side);
@@ -86,16 +92,16 @@
 
             switch (side) {
                 case GRect.Side.TOP_LEFT:
-                    point = new GPoint(-1, -1);
+                    point = new GPoint(0, 0);
                     break;
                 case GRect.Side.TOP_RIGHT:
-                    point = new GPoint(1, -1);
+                    point = new GPoint(w, 0);
                     break;
                 case GRect.Side.BOTTOM_RIGHT:
-                    point = new GPoint(1, 1);
+                    point = new GPoint(w, h);
                     break;
                 case GRect.Side.BOTTOM_LEFT:
-                    point = new GPoint(-1, 1);
+                    point = new GPoint(0, h);
                     break;
             }
 
@@ -107,6 +113,10 @@
                 break;
             }
         }
+    };
+
+    GRectangle.prototype.getSourceBBox = function () {
+        return new GRect(0, 0, this.$w, this.$h);
     };
 
     /**

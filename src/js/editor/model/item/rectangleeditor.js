@@ -28,6 +28,75 @@
 
     /** @override */
     GRectangleEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
+
+        if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
+            GElementEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
+
+            if (!this._elementPreview) {
+                this._elementPreview = new GRectangle();
+                this._elementPreview.transferProperties(this._element,
+                    [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
+            }
+
+            var newPos = viewToWorldTransform.mapPoint(position);
+            //newPos = guides.mapPoint(newPos);
+            var delta = newPos.subtract(partData.point);
+            var sourceBBox = this._element.getGeometryBBox();
+            var transform = sourceBBox.getResizeTransform(partData.side, delta.getX(), delta.getY(), shift, option);
+
+            var pe = this.getPaintElement();
+
+            var w = this._element.getProperty('w');
+            var h = this._element.getProperty('h');
+            var tx = 0;
+            var ty = 0;
+
+
+            var trf = this.getPaintElement().getTransform() || new GTransform();
+            var bbox = this.getPaintElement().getSourceBBox();
+
+            var oppositeHandle = trf.mapPoint(bbox.getSide(GRect.Side.LEFT_CENTER));
+            var handleVector = partData.point.subtract(oppositeHandle);
+            var projectedPoint = guides.mapPoint(GMath.getVectorProjection(partData.point.getX(), partData.point.getY(), 0, 0, newPos.getX(), newPos.getY()));
+            var distance = GMath.ptDist(partData.point.getX(), partData.point.getY(), projectedPoint.getX(), projectedPoint.getY());
+
+            switch (partData.side) {
+                case GRect.Side.TOP_LEFT:
+                case GRect.Side.LEFT_CENTER:
+                case GRect.Side.BOTTOM_LEFT:
+                    tx = delta.getX();
+                    w += -delta.getX();
+                    break;
+                case GRect.Side.TOP_RIGHT:
+                case GRect.Side.RIGHT_CENTER:
+                case GRect.Side.BOTTOM_RIGHT:
+                    //w += delta.getX();
+                    w += distance;
+                    break;
+                default:
+                    break;
+            }
+
+
+
+
+var trf = this._element.getTransform() || new GTransform();
+            trf = new GTransform(1, 0, 0, 1, tx, ty).multiplied(trf);
+
+            pe.setProperties(['trf', 'w', 'h'], [trf, w, h]);
+
+            if (!this.hasFlag(GElementEditor.Flag.Outline)) {
+                this.setFlag(GElementEditor.Flag.Outline);
+            } else {
+                this.requestInvalidation();
+            }
+
+            return;
+        }
+
+
+
+
         GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
 
         if (partId.id === GRectangleEditor.LEFT_SHOULDER_PART_ID ||
@@ -125,7 +194,26 @@
             element.transferProperties(this._elementPreview, [GShape.GeometryProperties, GRectangle.GeometryProperties]);
             this.resetTransform();
         } else {
-            GPathBaseEditor.prototype.applyTransform.call(this, element);
+            /*
+            var matrix = this._transform.getMatrix();
+
+            if (matrix[1] === 0 && matrix[2] === 0) {
+
+                var sx = matrix[0];
+                var sy = matrix[3];
+
+                var w = element.getProperty('w');
+                var h = element.getProperty('h');
+
+                element.setProperties(['w', 'h'], [w * sx, h * sy]);
+
+                element.transform(new GTransform(1, 0, 0, 1, matrix[4], matrix[5]));
+
+                this.resetTransform();
+            } else {
+*/
+                GPathBaseEditor.prototype.applyTransform.call(this, element);
+  //          }
         }
     };
 
