@@ -1,31 +1,35 @@
 (function ($) {
-
-    function updateSelectedSwatch($this, swatch) {
-        if ($this.data('glayerpanel').options.allowSelect) {
-            $this.find('.swatch-block').each(function (index, element) {
-                var $element = $(element);
-                $element
-                    .toggleClass('selected', $element.data('swatch') === swatch);
-            });
-        }
-    };
-
     function canDrop(parent, reference, dropNode) {
         var $this = $(this);
         var res = true;
         var data = $this.data('glayerpanel');
         if (data.options.canDropCallback) {
-            res = data.options.canDropCallback(parent.id, reference ? reference.id : null, dropNode.id);
+            var targetNode = parent.id ? getNodeByTreeId.call(this, parent.id) : $(this).data('glayerpanel').treeOwner;
+            var beforeNode = reference ? getNodeByTreeId.call(this, reference.id) : null;
+            var movedNode = getNodeByTreeId.call(this, dropNode.id);
+            res = data.options.canDropCallback(targetNode, beforeNode, movedNode);
         }
         return res;
     };
 
+    /**
+     * @param {GNode} targetNode
+     * @param {GNode} beforeNode
+     * @param {GNode} movedNode
+     * @return {Boolean} if move allowed
+     */
+    function canDropCallback(targetNode, beforeNode, movedNode) {
+        return movedNode && targetNode && movedNode.validateInsertion(targetNode, beforeNode);
+    };
+
     function moveHere(parent, reference, dropNode) {
         var $this = $(this);
-        //$this.trigger('moveHere', parent.id, reference.id, dropNode.id);
         var data = $this.data('glayerpanel');
         if (data.options.moveCallback) {
-            data.options.moveCallback(parent.id, reference ? reference.id : null, dropNode.id);
+            var targetNode = parent.id ? getNodeByTreeId.call(this, parent.id) : $(this).data('glayerpanel').treeOwner;
+            var beforeNode = reference ? getNodeByTreeId.call(this, reference.id) : null;
+            var movedNode = getNodeByTreeId.call(this, dropNode.id);
+            data.options.moveCallback(targetNode, beforeNode, movedNode);
         }
     };
 
@@ -33,7 +37,8 @@
         var $this = $(this);
         var data = $this.data('glayerpanel');
         if (data.options.clickCallback) {
-            data.options.clickCallback(node.id);
+            var layerOrItem = getNodeByTreeId.call(this, node.id);
+            data.options.clickCallback(layerOrItem);
         }
     };
 
@@ -66,8 +71,59 @@
         return refNode;
     };
 
+    /**
+     * @param {*} nodeId
+     * @return {GNode}
+     */
+    function getNodeByTreeId(nodeId) {
+        var layersTreeNodeMap = $(this).data('glayerpanel').layersTreeNodeMap;
+        for (var i = 0; i < layersTreeNodeMap.length; ++i) {
+            if (layersTreeNodeMap[i].treeId === nodeId) {
+                return layersTreeNodeMap[i].node;
+            }
+        }
+    };
+
+    /**
+     * @param {GNode} node
+     * @return {*}
+     */
+    function getLayerTreeNodeId(node) {
+        var layersTreeNodeMap = $(this).data('glayerpanel').layersTreeNodeMap;
+        for (var i = 0; i < layersTreeNodeMap.length; ++i) {
+            if (layersTreeNodeMap[i].node === node) {
+                return layersTreeNodeMap[i].treeId;
+            }
+        }
+    };
+
+    function removeNodeFromMap(layerOrItem) {
+        // Visit to remove each mapping as well
+        layerOrItem.accept(function (node) {
+            if (node instanceof GLayer || node instanceof GItem) {
+                var layersTreeNodeMap = $(this).data('glayerpanel').layersTreeNodeMap;
+                for (var i = 0; i < layersTreeNodeMap.length; ++i) {
+                    if (layersTreeNodeMap[i].node === node) {
+                        layersTreeNodeMap.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        }.bind(this));
+    };
+
+    /**
+     * @param {GNode} targetNode
+     * @param {GNode} beforeNode
+     * @param {GNode} movedNode
+     * @return {Boolean} if move allowed
+     */
+    function canDropCallback(targetNode, beforeNode, movedNode) {
+        return movedNode && targetNode && movedNode.validateInsertion(targetNode, beforeNode);
+    };
+
     function createLayerTreeItem(nodeId, expanded, row) {
-        var layerOrItem = this._getNodeByTreeId(nodeId);
+        var layerOrItem = getNodeByTreeId.call(this, nodeId);
         if (layerOrItem) {
             // Iterate parents up and collect some information
             var itemLevel = 0;
@@ -119,7 +175,7 @@
                     $(this).addClass('g-dragging');
                     setTimeout(function() {
                         $(this).removeClass('g-dragging');
-                    }.bind($(this)), 0);
+                    }.bind(this), 0);
                 })
                 .appendTo(container);
 
@@ -302,88 +358,168 @@
         }
     };
 
+    function vtreeAddNodeBefore(treeNodeId, refNodeId) {
+        var newNode = new TreeNodeNamed(treeNodeId);
+        var $this = $(this);
+        var vtree = $this.data('glayerpanel').vtree;
+        var refNode = getRefNode(vtree, refNodeId);
+        vtree.insertNodeBefore(refNode, newNode);
+    };
+
+    function vtreePrependNode(treeNodeId, refNodeId) {
+        var newNode = new TreeNodeNamed(treeNodeId);
+        var $this = $(this);
+        var vtree = $this.data('glayerpanel').vtree;
+        var refNode = getRefNode(vtree, refNodeId);
+        vtree.prependNode(refNode, newNode);
+    };
+
+    function vtreeRemoveNode(treeNodeId) {
+        var vtree = $(this).data('glayerpanel').vtree;
+        var refNode = getRefNode(vtree, treeNodeId);
+        vtree.removeNode(refNode);
+    };
+
+    function insertLayer(layerOrItem) {
+        // Create an unique treeId for the new tree node
+        var treeId = GUtil.uuid();
+        var data = $(this).data('glayerpanel');
+        var vtree = data.vtree;
+        vtree.beginUpdate();
+
+        // Either insert before or insert first but ensure to reverse order (last=top)
+        var previousNodeId = layerOrItem.getPrevious() ? getLayerTreeNodeId.call(this, layerOrItem.getPrevious()) : null;
+        if (previousNodeId) {
+            vtreeAddNodeBefore.call(this, treeId, previousNodeId);
+        } else {
+            var parent = layerOrItem.getParent();
+            var parentTreeNodeId = !parent || parent instanceof GScene ? null : getLayerTreeNodeId.call(this, parent);
+            var addBeforeNodeId = null;
+
+            if (parentTreeNodeId) {
+                if (parent.getFirstChild()) {
+                    addBeforeNodeId = getLayerTreeNodeId.call(this, parent.getFirstChild());
+                }
+            }
+
+            if (addBeforeNodeId) {
+                vtreeAddNodeBefore.call(this, treeId, addBeforeNodeId);
+            } else {
+                vtreePrependNode.call(this, treeId, parentTreeNodeId);
+            }
+        }
+
+        // Insert the mapping
+        data.layersTreeNodeMap.push({
+            node: layerOrItem,
+            treeId: treeId
+        });
+
+        // Iterate children and add them as well
+        if (layerOrItem.hasMixin(GNode.Container)) {
+
+            for (var child = layerOrItem.getFirstChild(); child !== null; child = child.getNext()) {
+                if (child instanceof GLayer || child instanceof GItem) {
+                    insertLayer.call(this, child);
+                }
+            }
+        }
+
+        vtree.endUpdate();
+    };
 
     var methods = {
         init: function (options) {
             options = $.extend({
-                // {Element} a HTML container for displaying the tree
-                container: $(this)[0],
-                // {Function(TreeNode, Element)} renderer to fill the tree node visible element with content
-                renderer: null,
                 // {String} a tree node visible element CSS style name. If not passed, the default style name is used.
                 nodeStyle: 'layer-row',
-                // {Function(Element)} renderer for the 'expand' span element
-                expandRenderer: expandRenderer,
                 expandStyle: 'layer-icon fa fa-caret-right',
                 collapseStyle: 'layer-icon fa fa-caret-down',
                 freeHeight: 7,
                 insertIntoStyle: 'g-drop',
-                upSeparatorStyle: 'g-up-separator-span1',
-                downSeparatorStyle: 'g-down-separator-span1',
-                paddingLeft: 50,
-                rowHeight: 30,
-                canDropCallback: null,
+                upSeparatorSpan1Style: 'g-up-separator-span1',
+                upSeparatorSpan2Style: 'g-up-separator-span2',
+                downSeparatorSpan1Style: 'g-down-separator-span1',
+                downSeparatorSpan2Style: 'g-down-separator-span2',
+                // {Function(TreeNode, Element)} renderer to fill the tree node visible element with content
+                renderer: createLayerTreeItem.bind(this),
+                // {Function(Element)} renderer for the 'expand' span element
+                expandRenderer: expandRenderer.bind(this),
+                separatorRenderer: null,
+                canDropCallback: canDropCallback.bind(this),
                 moveCallback: null,
                 clickCallback: null
             }, options);
 
             return this.each(function () {
-                var self = this;
+                // {Element} a HTML container for displaying the tree
+                var container = this;
                 var $this = $(this);
                 $this.data('glayerpanel', {
-                        vtree: new VTree(options.container, renderer.bind($(this)), options.nodeStyle,
-                            options.expandRenderer.bind($(this)),
-                            null, null, options.insertIntoStyle,
-                            canDrop.bind($(this)), moveHere.bind($(this)), nodeClick.bind($(this)),
-                            options.upSeparatorStyle, 'g-up-separator-span2', options.downSeparatorStyle, 'g-down-separator-span2'),
-                        options: options
+                        vtree: new VTree(container, renderer.bind(this), options.nodeStyle,
+                            options.expandRenderer ? options.expandRenderer : null,
+                            options.expandStyle == options.collapseStyle ? options.expandStyle : null,
+                            options.separatorRenderer ? options.separatorRenderer : null,
+                            options.freeHeight, options.insertIntoStyle,
+                            canDrop.bind(this), moveHere.bind(this), nodeClick.bind(this),
+                            options.upSeparatorSpan1Style, options.upSeparatorSpan2Style,
+                            options.downSeparatorSpan1Style,  options.downSeparatorSpan2Style),
+                        options: options,
+                        layersTreeNodeMap: [],
+                        treeOwner: null
                     });
             });
         },
 
-        addNodeBefore: function (treeNodeId, refNodeId) {
-            var newNode = new TreeNodeNamed(treeNodeId);
-            var $this = $(this);
-            var vtree = $this.data('glayerpanel').vtree;
-            var refNode = getRefNode(vtree, refNodeId);
-            vtree.insertNodeBefore(refNode, newNode);
+        updateLayer: function (layerOrItem) {
+            // Gather a tree node for the item
+            var treeNodeId = getLayerTreeNodeId.call(this, layerOrItem);
+
+            if (treeNodeId) {
+                $(this).data('glayerpanel').vtree.requestInvalidation();
+            }
         },
 
-        prependNode: function (treeNodeId, refNodeId) {
-            var newNode = new TreeNodeNamed(treeNodeId);
-            var $this = $(this);
-            var vtree = $this.data('glayerpanel').vtree;
-            var refNode = getRefNode(vtree, refNodeId);
-            vtree.prependNode(refNode, newNode);
+        insertLayer: function (layerOrItem) {
+            insertLayer.call(this, layerOrItem);
         },
 
-        // TODO: add appendNode and addNodeAfter
+        removeLayer: function (layerOrItem) {
+            // Gather a tree node for the item
+            var treeNodeId = getLayerTreeNodeId.call(this, layerOrItem);
 
-        removeNode: function (treeNodeId) {
-            var vtree = $(this).data('glayerpanel').vtree;
-            var refNode = getRefNode(vtree, treeNodeId);
-            vtree.removeNode(refNode);
-        },
-
-        beginUpdate: function () {
-            $(this).data('glayerpanel').vtree.beginUpdate();
-        },
-
-        endUpdate: function () {
-            var $this = $(this);
-            $(this).data('glayerpanel').vtree.endUpdate();
-        },
-
-        requestInvalidation: function () {
-            $(this).data('glayerpanel').vtree.requestInvalidation();
+            if (treeNodeId) {
+                vtreeRemoveNode.call(this, treeNodeId);
+                removeNodeFromMap.call(this, layerOrItem);
+            }
         },
 
         clean: function () {
-            $(this).data('glayerpanel').vtree.clean();
+            var data = $(this).data('glayerpanel');
+            data.vtree.clean();
+            data.layersTreeNodeMap = [];
+            data.treeOwner = null;
         },
 
         refresh: function () {
             $(this).data('glayerpanel').vtree.refresh();
+        },
+
+        treeOwner: function (treeOwner) {
+            var $this = $(this);
+            if (!arguments.length) {
+                return $this.data('glayerpanel').treeOwner;
+            } else {
+                methods.clean.apply(this);
+                $this.data('glayerpanel').treeOwner = treeOwner;
+                for (var child = treeOwner.getFirstChild(); child !== null; child = child.getNext()) {
+                    if (child instanceof GLayer) {
+                        methods.insertLayer.apply(this, child);
+                    }
+                }
+
+                return this;
+            }
         }
     };
 
