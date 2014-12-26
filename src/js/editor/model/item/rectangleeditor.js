@@ -40,9 +40,9 @@
 
             var newPos = viewToWorldTransform.mapPoint(position);
             //newPos = guides.mapPoint(newPos);
-            var delta = newPos.subtract(partData.point);
+            //var delta = newPos.subtract(partData.point);
             var sourceBBox = this._element.getGeometryBBox();
-            var transform = sourceBBox.getResizeTransform(partData.side, delta.getX(), delta.getY(), shift, option);
+            //var transform = sourceBBox.getResizeTransform(partData.side, delta.getX(), delta.getY(), shift, option);
 
             var pe = this.getPaintElement();
 
@@ -56,22 +56,22 @@
             var bbox = this.getPaintElement().getSourceBBox();
 
             var oppositeHandle = trf.mapPoint(bbox.getSide(GRect.Side.LEFT_CENTER));
-            var handleVector = partData.point.subtract(oppositeHandle);
-            var projectedPoint = guides.mapPoint(GMath.getVectorProjection(partData.point.getX(), partData.point.getY(), 0, 0, newPos.getX(), newPos.getY()));
-            var distance = GMath.ptDist(partData.point.getX(), partData.point.getY(), projectedPoint.getX(), projectedPoint.getY());
+            //var handleVector = partData.point.subtract(oppositeHandle);
+            var projectedPoint = guides.mapPoint(GMath.getVectorProjection(partData.point.getX(), partData.point.getY(), oppositeHandle.getX(), oppositeHandle.getY(), newPos.getX(), newPos.getY()));
+            var deltaX = GMath.ptDist(partData.point.getX(), partData.point.getY(), projectedPoint.getX(), projectedPoint.getY());
 
             switch (partData.side) {
                 case GRect.Side.TOP_LEFT:
                 case GRect.Side.LEFT_CENTER:
                 case GRect.Side.BOTTOM_LEFT:
-                    tx = delta.getX();
-                    w += -delta.getX();
+                    //tx = delta.getX();
+                    //w += deltaX;
                     break;
                 case GRect.Side.TOP_RIGHT:
                 case GRect.Side.RIGHT_CENTER:
                 case GRect.Side.BOTTOM_RIGHT:
                     //w += delta.getX();
-                    w += distance;
+                    w += deltaX;
                     break;
                 default:
                     break;
@@ -81,9 +81,9 @@
 
 
 var trf = this._element.getTransform() || new GTransform();
-            trf = new GTransform(1, 0, 0, 1, tx, ty).multiplied(trf);
+            //trf = new GTransform(1, 0, 0, 1, tx, ty).multiplied(trf);
 
-            pe.setProperties(['trf', 'w', 'h'], [trf, w, h]);
+            pe.setProperties(['w', 'h'], [w, h]);
 
             if (!this.hasFlag(GElementEditor.Flag.Outline)) {
                 this.setFlag(GElementEditor.Flag.Outline);
