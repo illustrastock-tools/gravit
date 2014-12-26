@@ -28,78 +28,37 @@
 
     /** @override */
     GRectangleEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
-
+        GElementEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
         if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
-            GElementEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
-
             if (!this._elementPreview) {
                 this._elementPreview = new GRectangle();
                 this._elementPreview.transferProperties(this._element,
                     [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
             }
 
-            var newPos = viewToWorldTransform.mapPoint(position);
-            //newPos = guides.mapPoint(newPos);
-            //var delta = newPos.subtract(partData.point);
-            var sourceBBox = this._element.getGeometryBBox();
-            //var transform = sourceBBox.getResizeTransform(partData.side, delta.getX(), delta.getY(), shift, option);
-
             var pe = this.getPaintElement();
+            var newPos = guides.mapPoint(position);
+            newPos = viewToWorldTransform.mapPoint(newPos);
+            var trf = pe.getTransform() || new GTransform();
+            var trfInv = trf.inverted();
+            newPos = trfInv.mapPoint(newPos);
 
-            var w = this._element.getProperty('w');
-            var h = this._element.getProperty('h');
-            var tx = 0;
-            var ty = 0;
+            var bbox = pe._getOrigBBox();
+            var origPos = bbox.getSide(partData.side);
 
+            var dx = newPos.getX() - origPos.getX();
+            var dy = newPos.getY() - origPos.getY();
 
-            var trf = this.getPaintElement().getTransform() || new GTransform();
-            var bbox = this.getPaintElement().getSourceBBox();
+            var curTrf = bbox.getResizeTransform(partData.side, dx, dy, shift, option);
+            var mtrx = curTrf.getMatrix();
+            trf = new GTransform(1, 0, 0, 1, mtrx[4], mtrx[5]).multiplied(trf);
 
-            var oppositeHandle = trf.mapPoint(bbox.getSide(GRect.Side.LEFT_CENTER));
-            //var handleVector = partData.point.subtract(oppositeHandle);
-            var projectedPoint = guides.mapPoint(GMath.getVectorProjection(partData.point.getX(), partData.point.getY(), oppositeHandle.getX(), oppositeHandle.getY(), newPos.getX(), newPos.getY()));
-            var deltaX = GMath.ptDist(partData.point.getX(), partData.point.getY(), projectedPoint.getX(), projectedPoint.getY());
-
-            switch (partData.side) {
-                case GRect.Side.TOP_LEFT:
-                case GRect.Side.LEFT_CENTER:
-                case GRect.Side.BOTTOM_LEFT:
-                    //tx = delta.getX();
-                    //w += deltaX;
-                    break;
-                case GRect.Side.TOP_RIGHT:
-                case GRect.Side.RIGHT_CENTER:
-                case GRect.Side.BOTTOM_RIGHT:
-                    //w += delta.getX();
-                    w += deltaX;
-                    break;
-                default:
-                    break;
-            }
-
-
-
-
-var trf = this._element.getTransform() || new GTransform();
-            //trf = new GTransform(1, 0, 0, 1, tx, ty).multiplied(trf);
-
-            pe.setProperties(['w', 'h'], [w, h]);
-
-            if (!this.hasFlag(GElementEditor.Flag.Outline)) {
-                this.setFlag(GElementEditor.Flag.Outline);
-            } else {
-                this.requestInvalidation();
-            }
-
-            return;
+            pe.setProperties(['trf', 'w', 'h'], [trf, bbox.getWidth() * mtrx[0], bbox.getHeight() * mtrx[3]]);
+            this.requestInvalidation();
+            //return;
         }
-
-
-
-
-        GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
-
-        if (partId.id === GRectangleEditor.LEFT_SHOULDER_PART_ID ||
+        //GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
+        else if (partId.id === GRectangleEditor.LEFT_SHOULDER_PART_ID ||
                 partId.id === GRectangleEditor.RIGHT_SHOULDER_PART_ID ||
                 partId.id === GRectangleEditor.ANY_SHOULDER_PART_ID) {
 

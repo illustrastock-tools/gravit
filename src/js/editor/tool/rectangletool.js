@@ -23,7 +23,7 @@
             new GTransform(area.getWidth() / 2, 0, 0, area.getHeight() / 2,
                 area.getX() + area.getWidth() / 2, area.getY() + area.getHeight() / 2));
         */
-        shape.setProperties(['trf', 'w', 'h'], [new GTransform(1, 0, 0, 1, area.getX(), area.getY()), area.getWidth(), area.getHeight()]);
+        shape.setProperties(['trf', 'w', 'h'], [new GTransform(1, 0, 0, 1, area.getX() + area.getWidth() / 2, area.getY() + area.getHeight() / 2), area.getWidth(), area.getHeight()]);
     };
 
     /** @override */

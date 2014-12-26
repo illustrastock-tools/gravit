@@ -92,16 +92,16 @@
 
             switch (side) {
                 case GRect.Side.TOP_LEFT:
-                    point = new GPoint(0, 0);
+                    point = new GPoint(-w / 2, -h / 2);
                     break;
                 case GRect.Side.TOP_RIGHT:
-                    point = new GPoint(w, 0);
+                    point = new GPoint(w / 2, -h / 2);
                     break;
                 case GRect.Side.BOTTOM_RIGHT:
-                    point = new GPoint(w, h);
+                    point = new GPoint(w / 2, h / 2);
                     break;
                 case GRect.Side.BOTTOM_LEFT:
-                    point = new GPoint(0, h);
+                    point = new GPoint(-w / 2, h / 2);
                     break;
             }
 
@@ -113,10 +113,6 @@
                 break;
             }
         }
-    };
-
-    GRectangle.prototype.getSourceBBox = function () {
-        return new GRect(0, 0, this.$w, this.$h);
     };
 
     /**
@@ -254,7 +250,7 @@
 
     /** @override */
     GRectangle.prototype._calculateOrigGeometryBBox = function () {
-        return new GRect(-1, -1, 2, 2);
+        return new GRect(-this.$w / 2, -this.$h / 2, this.$w, this.$h);
     };
 
     /**

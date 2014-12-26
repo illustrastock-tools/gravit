@@ -148,7 +148,7 @@
      */
     GBlockEditor.prototype._iterateResizeHandles = function (iterator, transform) {
         var trf = this.getPaintElement().getTransform() || new GTransform();
-        var bbox = this.getPaintElement().getSourceBBox ? this.getPaintElement().getSourceBBox() : trf.inverted().mapRect(this.getPaintElement().getGeometryBBox());//.getGeometryBBox();
+        var bbox = this.getPaintElement()._getOrigBBox ? this.getPaintElement()._getOrigBBox() : trf.inverted().mapRect(this.getPaintElement().getGeometryBBox());//.getGeometryBBox();
 
 
 
