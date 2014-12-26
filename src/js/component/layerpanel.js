@@ -61,7 +61,7 @@
 
     function getRefNode(vtree, refNodeId) {
         var refNode = null;
-        vtree._root.acceptChildren(function(node) {
+        vtree.acceptChildren(function(node) {
             if (node.id === refNodeId) {
                 refNode = node;
                 return false;
