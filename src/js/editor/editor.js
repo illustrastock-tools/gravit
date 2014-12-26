@@ -806,7 +806,7 @@
             if (alignExclusions) {
                 this._guides.useExclusions(alignExclusions);
             }
-            if (this.hasSelectionDetail() && startPos && this._selection.length == 1) {
+            if (this.hasSelectionDetail() && startPos && this._selection.length == 1 && !clone) {
                 var selBBox = this._selection[0].getGeometryBBox();
                 var side = selBBox.getClosestSideName(startPos);
                 var sidePos = selBBox.getSide(side);
