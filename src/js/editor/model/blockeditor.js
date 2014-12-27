@@ -41,9 +41,10 @@
     /** @override */
     GBlockEditor.prototype.getBBoxMargin = function () {
         if (this._showResizeHandles()) {
-            return GElementEditor.OPTIONS.annotationSizeSmall + 1;
+            return GElementEditor.OPTIONS.annotationSizeSmall + 1.5;
+        } else {
+            return 1.5;
         }
-        return GElementEditor.prototype.getBBoxMargin.call(this);
     };
 
     GBlockEditor.prototype.createElementPreview = function () {
@@ -233,16 +234,9 @@
     GBlockEditor.prototype._paintBBoxOutline = function (transform, context, color) {
         // Calculate transformed geometry bbox
         var sourceRect = this._element.getGeometryBBox();
-        var transformedRect = transform.mapRect(sourceRect);
+        var transformedQuadrilateral = transform.mapQuadrilateral(sourceRect);
 
-        if (transformedRect && !transformedRect.isEmpty()) {
-            // Ensure to pixel-align the rect
-            var x = Math.floor(transformedRect.getX());
-            var y = Math.floor(transformedRect.getY());
-            var w = Math.ceil(transformedRect.getX() + transformedRect.getWidth()) - x;
-            var h = Math.ceil(transformedRect.getY() + transformedRect.getHeight()) - y;
-
-
+        if (transformedQuadrilateral && transformedQuadrilateral.length) {
             if (!color) {
                 if (this.hasFlag(GElementEditor.Flag.Highlighted)) {
                     color = context.highlightOutlineColor;
@@ -251,7 +245,11 @@
                 }
             }
 
-            context.canvas.strokeRect(x + 0.5, y + 0.5, w, h, 1, color);
+            context.canvas.putVertices(transformedQuadrilateral.map(function (point) {
+                return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5);
+            }), true/*make closed*/);
+
+            context.canvas.strokeVertices(color, 1);
         }
     };
 

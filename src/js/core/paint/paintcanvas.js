@@ -674,10 +674,30 @@
      * previously added vertices. This will act as source for different
      * functions like clipVertices, strokeVertices and fillVertices
      * @param {GVertexSource|Array<GPoint>} source the source of vertices or points to be added
+     * @param {Boolean} [ensureClosed] if set, ensures the vertices are closed. Defaults to false.
      */
-    GPaintCanvas.prototype.putVertices = function (source) {
-        if (source instanceof GVertexSource) {
+    GPaintCanvas.prototype.putVertices = function (source, ensureClosed) {
+        if (source instanceof Array) {
+            if (source.length) {
+                this._canvasContext.beginPath();
+
+                for (var i = 0; i < source.length; ++i) {
+                    var pt = source[i];
+
+                    if (i === 0) {
+                        this._canvasContext.moveTo(pt.getX(), pt.getY());
+                    } else {
+                        this._canvasContext.lineTo(pt.getX(), pt.getY());
+                    }
+                }
+
+                if (ensureClosed) {
+                    this._canvasContext.closePath();
+                }
+            }
+        } else {
             if (source.rewindVertices(0)) {
+                var closed = false;
                 this._canvasContext.beginPath();
 
                 var vertex = new GVertex();
@@ -712,27 +732,18 @@
                         }
                             break;
                         case GVertex.Command.Close:
+                            closed = true;
                             this._canvasContext.closePath();
                             break;
                         default:
                             throw new Error("Unknown Command Type - " + vertex.command);
                     }
                 }
-            }
-        } else if (source instanceof Array) {
-            if (source.length) {
-                this._canvasContext.beginPath();
-                for (var i = 0; i < source.length; ++i) {
-                    var pt = source[i];
-                    if (i === 0) {
-                        this._canvasContext.moveTo(pt.getX(), pt.getY());
-                    } else {
-                        this._canvasContext.lineTo(pt.getX(), pt.getY());
-                    }
+
+                if (!closed && ensureClosed) {
+                    this._canvasContext.closePath();
                 }
             }
-        } else {
-            throw new Error('Invalid source for vertices.');
         }
     };
 
