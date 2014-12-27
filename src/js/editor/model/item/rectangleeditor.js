@@ -8,7 +8,7 @@
      */
     function GRectangleEditor(rectangle) {
         GPathBaseEditor.call(this, rectangle);
-        this._flags |= GBlockEditor.Flag.ResizeAll;
+        this._flags |= GBlockEditor.Flag.ResizeAll | GBlockEditor.Flag.ResizeOrig;
     };
     GObject.inherit(GRectangleEditor, GPathBaseEditor);
     GElementEditor.exports(GRectangleEditor, GRectangle);
@@ -27,49 +27,24 @@
     };
 
     /** @override */
-    GRectangleEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
-        GElementEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
-        if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
-            if (!this._elementPreview) {
-                this._elementPreview = new GRectangle();
-                this._elementPreview.transferProperties(this._element,
-                    [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
-            }
-
-            var pe = this.getPaintElement();
-            var newPos = viewToWorldTransform.mapPoint(position);
-            newPos = guides.mapPoint(newPos);
-            var trf = pe.getTransform() || new GTransform();
-            var trfInv = trf.inverted();
-            newPos = trfInv.mapPoint(newPos);
-
-            var bbox = pe._getOrigBBox();
-            var origPos = bbox.getSide(partData.side);
-
-            var dx = newPos.getX() - origPos.getX();
-            var dy = newPos.getY() - origPos.getY();
-
-            var curTrf = bbox.getResizeTransform(partData.side, dx, dy, shift, option);
-            var mtrx = curTrf.getMatrix();
-            trf = new GTransform(1, 0, 0, 1, mtrx[4], mtrx[5]).multiplied(trf);
-
-            pe.setProperties(['trf', 'w', 'h'], [trf, bbox.getWidth() * mtrx[0], bbox.getHeight() * mtrx[3]]);
-            this.requestInvalidation();
-            //return;
+    GRectangleEditor.prototype.createElementPreview = function () {
+        if (!this._elementPreview) {
+            this._elementPreview = new GRectangle();
+            this._elementPreview.transferProperties(this._element,
+                [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
         }
-        //GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
-        else if (partId.id === GRectangleEditor.LEFT_SHOULDER_PART_ID ||
+    };
+
+    /** @override */
+    GRectangleEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
+        GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
+        if (partId.id === GRectangleEditor.LEFT_SHOULDER_PART_ID ||
                 partId.id === GRectangleEditor.RIGHT_SHOULDER_PART_ID ||
                 partId.id === GRectangleEditor.ANY_SHOULDER_PART_ID) {
 
             var newPos = viewToWorldTransform.mapPoint(position);
 
-            if (!this._elementPreview) {
-                this._elementPreview = new GRectangle();
-                this._elementPreview.transferProperties(this._element,
-                    [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
-            }
-
+            this.createElementPreview();
             var sourceTransform = this._element.getTransform();
             var sourcePosition = new GPoint(partId.ap.getProperty('x'), partId.ap.getProperty('y'));
             if (sourceTransform) {
@@ -148,31 +123,17 @@
     };
 
     /** @override */
+    GRectangleEditor.prototype.canApplyTransform = function () {
+        return this._elementPreview || GPathBaseEditor.prototype.canApplyTransform.call(this);
+    };
+
+    /** @override */
     GRectangleEditor.prototype.applyTransform = function (element) {
         if (element && this._elementPreview) {
             element.transferProperties(this._elementPreview, [GShape.GeometryProperties, GRectangle.GeometryProperties]);
             this.resetTransform();
         } else {
-            /*
-            var matrix = this._transform.getMatrix();
-
-            if (matrix[1] === 0 && matrix[2] === 0) {
-
-                var sx = matrix[0];
-                var sy = matrix[3];
-
-                var w = element.getProperty('w');
-                var h = element.getProperty('h');
-
-                element.setProperties(['w', 'h'], [w * sx, h * sy]);
-
-                element.transform(new GTransform(1, 0, 0, 1, matrix[4], matrix[5]));
-
-                this.resetTransform();
-            } else {
-*/
-                GPathBaseEditor.prototype.applyTransform.call(this, element);
-  //          }
+            GPathBaseEditor.prototype.applyTransform.call(this, element);
         }
     };
 

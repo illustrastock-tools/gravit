@@ -28,7 +28,12 @@
          * The editor supports all resize handles
          * @type Number
          */
-        ResizeAll: (1 << 10) | (1 << 11)
+        ResizeAll: (1 << 10) | (1 << 11),
+
+        /**
+         * The editor should work with original bbox resizing
+         */
+        ResizeOrig: 1 << 12
     };
 
     GBlockEditor.RESIZE_HANDLE_PART_ID = GUtil.uuid();
@@ -41,6 +46,10 @@
         return GElementEditor.prototype.getBBoxMargin.call(this);
     };
 
+    GBlockEditor.prototype.createElementPreview = function () {
+        // NO-OP
+    };
+
     /** @override */
     GBlockEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
         GElementEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
@@ -48,17 +57,41 @@
         if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
             var newPos = viewToWorldTransform.mapPoint(position);
             newPos = guides.mapPoint(newPos);
-            var delta = newPos.subtract(partData.point);
-            var sourceBBox = this._element.getGeometryBBox();
-            var transform = sourceBBox.getResizeTransform(partData.side, delta.getX(), delta.getY(), shift, option);
-            this.transform(transform);
+            var trf = null;
+            if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+                trf = this._element.getTransform() || new GTransform();
+                var trfInv = trf.inverted();
+                newPos = trfInv.mapPoint(newPos);
+            }
+
+            var bbox = this.hasFlag(GBlockEditor.Flag.ResizeOrig) ? this._element._getOrigBBox() : this._element.getGeometryBBox();
+            var origPos = bbox.getSide(partData.side);
+
+            var dx = newPos.getX() - origPos.getX();
+            var dy = newPos.getY() - origPos.getY();
+
+            var curTrf = bbox.getResizeTransform(partData.side, dx, dy, shift, option);
+            if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+                this.createElementPreview();
+                var pe = this.getPaintElement();
+                trf = curTrf.multiplied(trf);
+                pe.setProperties(['trf'], [trf]);
+                this.requestInvalidation();
+            } else {
+                this.transform(curTrf);
+            }
         }
     };
 
     /** @override */
     GBlockEditor.prototype.applyPartMove = function (partId, partData) {
         if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
-            this.applyTransform(this._element);
+            if (!this.canApplyTransform()) {
+                // Reset editor transformation
+                this.resetTransform();
+            } else {
+                this.applyTransform(this._element);
+            }
         }
         GElementEditor.prototype.applyPartMove.call(this, partId, partData);
     };
@@ -147,15 +180,21 @@
      * to show resize handles
      */
     GBlockEditor.prototype._iterateResizeHandles = function (iterator, transform) {
-        var trf = this.getPaintElement().getTransform() || new GTransform();
-        var bbox = this.getPaintElement()._getOrigBBox ? this.getPaintElement()._getOrigBBox() : trf.inverted().mapRect(this.getPaintElement().getGeometryBBox());//.getGeometryBBox();
-
-
+        var pe = this.getPaintElement();
+        var trf = null;
+        var bbox = null;
+        if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+            trf = pe.getTransform() || new GTransform();
+            bbox = pe._getOrigBBox();
+        } else {
+            trf = new GTransform();
+            bbox = pe.getGeometryBBox();
+        }
 
         if (bbox && !bbox.isEmpty()) {
             var sides = [];
-
-            var transformedBBox = transform ? transform.mapRect(bbox) : bbox;
+            // TODO: fix here for more correct identification, which handles should be painted / iterated
+            var transformedBBox = transform ? trf.multiplied(transform).mapRect(bbox) : trf.mapRect(bbox);
 
             if (this.hasFlag(GBlockEditor.Flag.ResizeEdges) &&
                     transformedBBox.getHeight() > (GElementEditor.OPTIONS.annotationSizeSmall + 2) * 2 &&
