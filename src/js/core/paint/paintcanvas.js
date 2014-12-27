@@ -670,53 +670,69 @@
     };
 
     /**
-     * Pushes a vertex source into this canvas overwriting any
+     * Pushes either a vertex source or an array of points into this canvas overwriting any
      * previously added vertices. This will act as source for different
      * functions like clipVertices, strokeVertices and fillVertices
-     * @param {GVertexSource} vertexSource the vertex source to use for clipping
+     * @param {GVertexSource|Array<GPoint>} source the source of vertices or points to be added
      */
-    GPaintCanvas.prototype.putVertices = function (vertexSource) {
-        if (vertexSource.rewindVertices(0)) {
-            this._canvasContext.beginPath();
+    GPaintCanvas.prototype.putVertices = function (source) {
+        if (source instanceof GVertexSource) {
+            if (source.rewindVertices(0)) {
+                this._canvasContext.beginPath();
 
-            var vertex = new GVertex();
-            while (vertexSource.readVertex(vertex)) {
-                switch (vertex.command) {
-                    case GVertex.Command.Move:
-                        this._canvasContext.moveTo(vertex.x, vertex.y);
-                        break;
-                    case GVertex.Command.Line:
-                        this._canvasContext.lineTo(vertex.x, vertex.y);
-                        break;
-                    case GVertex.Command.Curve:
-                    {
-                        var xTo = vertex.x;
-                        var yTo = vertex.y;
-                        if (vertexSource.readVertex(vertex)) {
-                            this._canvasContext.quadraticCurveTo(vertex.x, vertex.y, xTo, yTo);
-                        }
-                    }
-                        break;
-                    case GVertex.Command.Curve2:
-                    {
-                        var xTo = vertex.x;
-                        var yTo = vertex.y;
-                        if (vertexSource.readVertex(vertex)) {
-                            var cx1 = vertex.x;
-                            var cy1 = vertex.y;
-                            if (vertexSource.readVertex(vertex)) {
-                                this._canvasContext.bezierCurveTo(cx1, cy1, vertex.x, vertex.y, xTo, yTo);
+                var vertex = new GVertex();
+                while (source.readVertex(vertex)) {
+                    switch (vertex.command) {
+                        case GVertex.Command.Move:
+                            this._canvasContext.moveTo(vertex.x, vertex.y);
+                            break;
+                        case GVertex.Command.Line:
+                            this._canvasContext.lineTo(vertex.x, vertex.y);
+                            break;
+                        case GVertex.Command.Curve:
+                        {
+                            var xTo = vertex.x;
+                            var yTo = vertex.y;
+                            if (source.readVertex(vertex)) {
+                                this._canvasContext.quadraticCurveTo(vertex.x, vertex.y, xTo, yTo);
                             }
                         }
+                            break;
+                        case GVertex.Command.Curve2:
+                        {
+                            var xTo = vertex.x;
+                            var yTo = vertex.y;
+                            if (source.readVertex(vertex)) {
+                                var cx1 = vertex.x;
+                                var cy1 = vertex.y;
+                                if (source.readVertex(vertex)) {
+                                    this._canvasContext.bezierCurveTo(cx1, cy1, vertex.x, vertex.y, xTo, yTo);
+                                }
+                            }
+                        }
+                            break;
+                        case GVertex.Command.Close:
+                            this._canvasContext.closePath();
+                            break;
+                        default:
+                            throw new Error("Unknown Command Type - " + vertex.command);
                     }
-                        break;
-                    case GVertex.Command.Close:
-                        this._canvasContext.closePath();
-                        break;
-                    default:
-                        throw new Error("Unknown Command Type - " + vertex.command);
                 }
             }
+        } else if (source instanceof Array) {
+            if (source.length) {
+                this._canvasContext.beginPath();
+                for (var i = 0; i < source.length; ++i) {
+                    var pt = source[i];
+                    if (i === 0) {
+                        this._canvasContext.moveTo(pt.getX(), pt.getY());
+                    } else {
+                        this._canvasContext.lineTo(pt.getX(), pt.getY());
+                    }
+                }
+            }
+        } else {
+            throw new Error('Invalid source for vertices.');
         }
     };
 
