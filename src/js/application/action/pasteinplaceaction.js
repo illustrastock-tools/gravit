@@ -45,7 +45,8 @@
             var nodes = GNode.deserialize(gHost.getClipboardContent(GNode.MIME_TYPE));
             if (nodes && nodes.length > 0) {
                 var elements = [];
-                var page = gApp.getActiveDocument().getScene().querySingle('page:active');
+                var scene = gApp.getActiveDocument().getScene();
+                var page = scene instanceof GPage ? scene : scene.querySingle('page:active');
                 for (var i = 0; i < nodes.length; ++i) {
                     if (nodes[i] instanceof GElement) {
                         var element = nodes[i];

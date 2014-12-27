@@ -76,7 +76,8 @@
             if (nodes && nodes.length > 0) {
                 var elements = [];
                 var editor = gApp.getActiveDocument().getEditor();
-                var page = gApp.getActiveDocument().getScene().querySingle('page:active');
+                var scene = gApp.getActiveDocument().getScene();
+                var page = scene instanceof GPage ? scene : scene.querySingle('page:active');
                 var pageCntr = page.getGeometryBBox().getSide(GRect.Side.CENTER);
                 for (var i = 0; i < nodes.length; ++i) {
                     if (nodes[i] instanceof GElement) {
