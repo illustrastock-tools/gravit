@@ -45,6 +45,15 @@
     };
 
     /** @override */
+    GPolygonEditor.prototype.createElementPreview = function () {
+        if (!this._elementPreview) {
+            this._elementPreview = new GPolygon();
+            this._elementPreview.transferProperties(this._element,
+                [GShape.GeometryProperties, GPolygon.GeometryProperties], true);
+        }
+    };
+
+    /** @override */
     GPolygonEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
         GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
 
@@ -55,11 +64,7 @@
                 newPos = trf.inverted().mapPoint(newPos);
             }
 
-            if (!this._elementPreview) {
-                this._elementPreview = new GPolygon();
-                this._elementPreview.transferProperties(this._element,
-                    [GShape.GeometryProperties, GPolygon.GeometryProperties], true);
-            }
+            this.createElementPreview();
 
             var center = this._element.getCenter(false);
             var angle = Math.atan2(newPos.getY() - center.getY(), newPos.getX() - center.getX()) - partData;
@@ -130,6 +135,10 @@
         GPathBaseEditor.prototype.applyPartMove.call(this, partId, partData);
     };
 
+    /** @override */
+    GPolygonEditor.prototype.canApplyTransform = function () {
+        return this._elementPreview || GPathBaseEditor.prototype.canApplyTransform.call(this);
+    };
 
     /** @override */
     GPolygonEditor.prototype.applyTransform = function (element) {
