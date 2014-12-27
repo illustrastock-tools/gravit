@@ -21,20 +21,25 @@
     /** @override */
     GImageEditor.prototype.createElementPreview = function () {
         if (!this._elementPreview) {
-            // Create a rectangle instead of an image for the preview
-            this._elementPreview = new GRectangle();
-            var imageTransform = this._element.getTransform();
-
             var imageSourceBBox = this._element.getSourceBBox();
+            // Create a rectangle instead of an image for the preview
+            this._elementPreview = new GRectangle(imageSourceBBox.getX(), imageSourceBBox.getY(), imageSourceBBox.getWidth(), imageSourceBBox.getHeight());
+            this._elementPreview.transferProperties(this._element, [GShape.GeometryProperties]);
+        }
+    };
 
-            var rectToImageTransform = new GTransform(imageSourceBBox.getWidth() / 2, 0, 0, imageSourceBBox.getHeight() / 2,
-                imageSourceBBox.getX() + imageSourceBBox.getWidth() / 2, imageSourceBBox.getY() + imageSourceBBox.getHeight() / 2)
+    /** @override */
+    GImageEditor.prototype.canApplyTransform = function () {
+        return this._elementPreview || GPathBaseEditor.prototype.canApplyTransform.call(this);
+    };
 
-            if (imageTransform) {
-                rectToImageTransform = rectToImageTransform.multiplied(imageTransform);
-            }
-
-            this._elementPreview.setProperty('trf', rectToImageTransform);
+    /** @override */
+    GImageEditor.prototype.applyTransform = function (element) {
+        if (element && this._elementPreview) {
+            element.transferProperties(this._elementPreview, [GShape.GeometryProperties]);
+            this.resetTransform();
+        } else {
+            GPathBaseEditor.prototype.applyTransform.call(this, element);
         }
     };
 

@@ -2,11 +2,31 @@
 
     /**
      * A rectangle shape
+     * @param {Number} x - optional, top left x coordinate,
+     * should be used only when GRectangle element sourceBBox need to fit some other shape bbox
+     * @param {Number} y - optional, top left y coordinate,
+     * should be used only when GRectangle element sourceBBox need to fit some other shape bbox
+     * @param {Number} w - optional, rectangle original width,
+     * should be used only when GRectangle element sourceBBox need to fit some other shape bbox
+     * @param {Number} h - optional, rectangle original height,
+     * should be used only when GRectangle element sourceBBox need to fit some other shape bbox
      * @class GRectangle
      * @extends GPathBase
      * @constructor
      */
-    function GRectangle() {
+    function GRectangle(x, y, w, h) {
+        if (x || x === 0) {
+            this._x = x;
+        }
+        if (y || y === 0) {
+            this._y = y;
+        }
+        if (w) {
+            this._w = w;
+        }
+        if (h) {
+            this._h = h;
+        }
         GPathBase.call(this);
         this.$closed = true; // rectangles are always closed
         this._setDefaultProperties(GRectangle.GeometryProperties);
@@ -70,6 +90,27 @@
     GRectangle.SIDES = [GRect.Side.TOP_LEFT, GRect.Side.TOP_RIGHT, GRect.Side.BOTTOM_RIGHT, GRect.Side.BOTTOM_LEFT];
 
     /**
+     * @type {Number} top left x coordinate of sourceBBox
+     * @private
+     */
+    GRectangle.prototype._x = -1;
+    /**
+     * @type {Number} top left y coordinate of sourceBBox
+     * @private
+     */
+    GRectangle.prototype._y = -1;
+    /**
+     * @type {Number} rectangle original width
+     * @private
+     */
+    GRectangle.prototype._w = 2;
+    /**
+     * @type {Number} rectangle original height
+     * @private
+     */
+    GRectangle.prototype._h = 2;
+
+    /**
      * Iterate all segments of the rectangle
      * @param {Function(point: GPoint, side: GRect.Side, cornerType: GPathBase.CornerType, leftShoulderLength: Number, rightShoulderLength: Number, idx: Number)} iterator
      * the iterator receiving the parameters. If this returns true then the iteration will be stopped.
@@ -86,16 +127,16 @@
 
             switch (side) {
                 case GRect.Side.TOP_LEFT:
-                    point = new GPoint(-1, -1);
+                    point = new GPoint(this._x, this._y);
                     break;
                 case GRect.Side.TOP_RIGHT:
-                    point = new GPoint(1, -1);
+                    point = new GPoint(this._x + this._w, this._y);
                     break;
                 case GRect.Side.BOTTOM_RIGHT:
-                    point = new GPoint(1, 1);
+                    point = new GPoint(this._x + this._w, this._y + this._h);
                     break;
                 case GRect.Side.BOTTOM_LEFT:
-                    point = new GPoint(-1, 1);
+                    point = new GPoint(this._x, this._y + this._h);
                     break;
             }
 
@@ -244,7 +285,7 @@
 
     /** @override */
     GRectangle.prototype._calculateSourceBBox = function () {
-        return new GRect(-1, -1, 2, 2);
+        return new GRect(this._x, this._y, this._w, this._h);
     };
 
     /**
