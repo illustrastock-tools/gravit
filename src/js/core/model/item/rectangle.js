@@ -245,7 +245,6 @@
     /** @override */
     GRectangle.prototype._calculateOrigGeometryBBox = function () {
         return new GRect(-1, -1, 2, 2);
-        //return new GRect(-this.$w / 2, -this.$h / 2, this.$w, this.$h);
     };
 
     /**
