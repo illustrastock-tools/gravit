@@ -174,6 +174,13 @@
     };
 
     /** @override */
+    GImage.prototype._calculateOrigGeometryBBox = function () {
+        if (this._image ) {
+            return new GRect(0, 0, this._getWidth(), this._getHeight());
+        }
+    };
+
+    /** @override */
     GImage.prototype._detailHitTest = function (location, transform, tolerance, force) {
         // TODO : Make correct shape hit test here instead
         return new GElement.HitResultInfo(this);

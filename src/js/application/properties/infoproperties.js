@@ -278,6 +278,10 @@
                 _updateDimension('y', this._elementsBBox.getY() - delta.getY());
                 _updateDimension('w', this._elementsBBox.getWidth());
                 _updateDimension('h', this._elementsBBox.getHeight());
+               /* _updateDimension('x', this._elements[0].getProperty('x'));
+                _updateDimension('y', this._elements[0].getProperty('y'));
+                _updateDimension('w', this._elements[0].getProperty('w'));
+                _updateDimension('h', this._elements[0].getProperty('h')); */
             } else {
                 _updateDimension('x', this._firstElementsBBox.getX() - delta.getX());
                 _updateDimension('y', this._firstElementsBBox.getY() - delta.getY());
@@ -359,6 +363,9 @@
         var editor = this._document.getEditor();
         editor.beginTransaction();
         try {
+            //this._elements[0].setProperties([dimension], [value]);
+
+
             if (applyToSelection) {
                 var transform = _getTransformation(this._elementsBBox, keepRatio);
                 for (var i = 0; i < this._elements.length; ++i) {
@@ -370,6 +377,7 @@
                     this._elements[i].transform(transform);
                 }
             }
+
         } finally {
             // TODO : I18N
             editor.commitTransaction('Change Size');

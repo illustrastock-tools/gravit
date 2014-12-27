@@ -405,19 +405,7 @@
     /** @override */
     GTextEditor.prototype._prePaint = function (transform, context) {
         if ((this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) && !this.isInlineEdit()) {
-            // Paint textbox outline instead of glyphs
-            var textRect = this._element.getGeometryBBox();
-            if (textRect) {
-                var transformedRect = transform.mapRect(textRect);
-
-                // Ensure to pixel-align the rect
-                var x = Math.floor(transformedRect.getX());
-                var y = Math.floor(transformedRect.getY());
-                var w = Math.ceil(transformedRect.getX() + transformedRect.getWidth()) - x;
-                var h = Math.ceil(transformedRect.getY() + transformedRect.getHeight()) - y;
-
-                context.canvas.strokeRect(x + 0.5, y + 0.5, w, h, 1, this.hasFlag(GElementEditor.Flag.Highlighted) ? context.highlightOutlineColor : context.selectionOutlineColor);
-            }
+            this._paintBBoxOutline(transform, context);
         }
     };
 

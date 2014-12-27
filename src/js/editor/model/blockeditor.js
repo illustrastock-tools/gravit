@@ -28,7 +28,12 @@
          * The editor supports all resize handles
          * @type Number
          */
-        ResizeAll: (1 << 10) | (1 << 11)
+        ResizeAll: (1 << 10) | (1 << 11),
+
+        /**
+         * The editor should work with original bbox resizing
+         */
+        ResizeOrig: 1 << 12
     };
 
     GBlockEditor.RESIZE_HANDLE_PART_ID = GUtil.uuid();
@@ -36,9 +41,14 @@
     /** @override */
     GBlockEditor.prototype.getBBoxMargin = function () {
         if (this._showResizeHandles()) {
-            return GElementEditor.OPTIONS.annotationSizeSmall + 1;
+            return GElementEditor.OPTIONS.annotationSizeSmall + 1.5;
+        } else {
+            return 1.5;
         }
-        return GElementEditor.prototype.getBBoxMargin.call(this);
+    };
+
+    GBlockEditor.prototype.createElementPreview = function () {
+        // NO-OP
     };
 
     /** @override */
@@ -48,17 +58,41 @@
         if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
             var newPos = viewToWorldTransform.mapPoint(position);
             newPos = guides.mapPoint(newPos);
-            var delta = newPos.subtract(partData.point);
-            var sourceBBox = this._element.getGeometryBBox();
-            var transform = sourceBBox.getResizeTransform(partData.side, delta.getX(), delta.getY(), shift, option);
-            this.transform(transform);
+            var trf = null;
+            if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+                trf = this._element.getTransform() || new GTransform();
+                var trfInv = trf.inverted();
+                newPos = trfInv.mapPoint(newPos);
+            }
+
+            var bbox = this.hasFlag(GBlockEditor.Flag.ResizeOrig) ? this._element._getOrigBBox() : this._element.getGeometryBBox();
+            var origPos = bbox.getSide(partData.side);
+
+            var dx = newPos.getX() - origPos.getX();
+            var dy = newPos.getY() - origPos.getY();
+
+            var curTrf = bbox.getResizeTransform(partData.side, dx, dy, shift, option);
+            if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+                this.createElementPreview();
+                var pe = this.getPaintElement();
+                trf = curTrf.multiplied(trf);
+                pe.setProperties(['trf'], [trf]);
+                this.requestInvalidation();
+            } else {
+                this.transform(curTrf);
+            }
         }
     };
 
     /** @override */
     GBlockEditor.prototype.applyPartMove = function (partId, partData) {
         if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
-            this.applyTransform(this._element);
+            if (!this.canApplyTransform()) {
+                // Reset editor transformation
+                this.resetTransform();
+            } else {
+                this.applyTransform(this._element);
+            }
         }
         GElementEditor.prototype.applyPartMove.call(this, partId, partData);
     };
@@ -147,12 +181,21 @@
      * to show resize handles
      */
     GBlockEditor.prototype._iterateResizeHandles = function (iterator, transform) {
-        var bbox = this.getPaintElement().getGeometryBBox();
+        var pe = this.getPaintElement();
+        var trf = null;
+        var bbox = null;
+        if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+            trf = pe.getTransform() || new GTransform();
+            bbox = pe._getOrigBBox();
+        } else {
+            trf = new GTransform();
+            bbox = pe.getGeometryBBox();
+        }
 
         if (bbox && !bbox.isEmpty()) {
             var sides = [];
-
-            var transformedBBox = transform ? transform.mapRect(bbox) : bbox;
+            // TODO: fix here for more correct identification, which handles should be painted / iterated
+            var transformedBBox = transform ? trf.multiplied(transform).mapRect(bbox) : trf.mapRect(bbox);
 
             if (this.hasFlag(GBlockEditor.Flag.ResizeEdges) &&
                     transformedBBox.getHeight() > (GElementEditor.OPTIONS.annotationSizeSmall + 2) * 2 &&
@@ -172,7 +215,7 @@
 
             for (var i = 0; i < sides.length; ++i) {
                 var side = sides[i];
-                var point = bbox.getSide(side);
+                var point = trf.mapPoint(bbox.getSide(side));
                 if (iterator(point, side) === true) {
                     break;
                 }
@@ -191,16 +234,9 @@
     GBlockEditor.prototype._paintBBoxOutline = function (transform, context, color) {
         // Calculate transformed geometry bbox
         var sourceRect = this._element.getGeometryBBox();
-        var transformedRect = transform.mapRect(sourceRect);
+        var transformedQuadrilateral = transform.mapQuadrilateral(sourceRect);
 
-        if (transformedRect && !transformedRect.isEmpty()) {
-            // Ensure to pixel-align the rect
-            var x = Math.floor(transformedRect.getX());
-            var y = Math.floor(transformedRect.getY());
-            var w = Math.ceil(transformedRect.getX() + transformedRect.getWidth()) - x;
-            var h = Math.ceil(transformedRect.getY() + transformedRect.getHeight()) - y;
-
-
+        if (transformedQuadrilateral && transformedQuadrilateral.length) {
             if (!color) {
                 if (this.hasFlag(GElementEditor.Flag.Highlighted)) {
                     color = context.highlightOutlineColor;
@@ -209,7 +245,11 @@
                 }
             }
 
-            context.canvas.strokeRect(x + 0.5, y + 0.5, w, h, 1, color);
+            context.canvas.putVertices(transformedQuadrilateral.map(function (point) {
+                return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5);
+            }), true/*make closed*/);
+
+            context.canvas.strokeVertices(color, 1);
         }
     };
 

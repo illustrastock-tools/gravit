@@ -8,7 +8,7 @@
      */
     function GRectangleEditor(rectangle) {
         GPathBaseEditor.call(this, rectangle);
-        this._flags |= GBlockEditor.Flag.ResizeAll;
+        this._flags |= GBlockEditor.Flag.ResizeAll | GBlockEditor.Flag.ResizeOrig;
     };
     GObject.inherit(GRectangleEditor, GPathBaseEditor);
     GElementEditor.exports(GRectangleEditor, GRectangle);
@@ -27,21 +27,24 @@
     };
 
     /** @override */
+    GRectangleEditor.prototype.createElementPreview = function () {
+        if (!this._elementPreview) {
+            this._elementPreview = new GRectangle();
+            this._elementPreview.transferProperties(this._element,
+                [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
+        }
+    };
+
+    /** @override */
     GRectangleEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
         GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
-
         if (partId.id === GRectangleEditor.LEFT_SHOULDER_PART_ID ||
                 partId.id === GRectangleEditor.RIGHT_SHOULDER_PART_ID ||
                 partId.id === GRectangleEditor.ANY_SHOULDER_PART_ID) {
 
             var newPos = viewToWorldTransform.mapPoint(position);
 
-            if (!this._elementPreview) {
-                this._elementPreview = new GRectangle();
-                this._elementPreview.transferProperties(this._element,
-                    [GShape.GeometryProperties, GRectangle.GeometryProperties], true);
-            }
-
+            this.createElementPreview();
             var sourceTransform = this._element.getTransform();
             var sourcePosition = new GPoint(partId.ap.getProperty('x'), partId.ap.getProperty('y'));
             if (sourceTransform) {
@@ -117,6 +120,11 @@
             this._element.transferProperties(this._elementPreview, [GRectangle.GeometryProperties]);
         }
         GPathBaseEditor.prototype.applyPartMove.call(this, partId, partData);
+    };
+
+    /** @override */
+    GRectangleEditor.prototype.canApplyTransform = function () {
+        return this._elementPreview || GPathBaseEditor.prototype.canApplyTransform.call(this);
     };
 
     /** @override */

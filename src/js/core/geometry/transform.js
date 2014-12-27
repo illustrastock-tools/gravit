@@ -305,23 +305,31 @@
     };
 
     /**
-     * Map a rectangle into this transformation
+     * Map a rectangle into a quadrilateral within this transformation
      * @param {GRect} rect the rectangle to map
-     * @return {GRect} a new rect mapped into this transformation
-     * @version 1.0
+     * @return {Array<GPoint>} an array with four points for the quadrilateral
      */
-    GTransform.prototype.mapRect = function (rect) {
-        // If identity nothing to transform so return
-        if (this.isIdentity() || rect == null) {
-            return rect;
-        }
-
+    GTransform.prototype.mapQuadrilateral = function (rect) {
         var p1 = rect.getSide(GRect.Side.TOP_LEFT);
         var p2 = rect.getSide(GRect.Side.TOP_RIGHT);
         var p3 = rect.getSide(GRect.Side.BOTTOM_RIGHT);
         var p4 = rect.getSide(GRect.Side.BOTTOM_LEFT);
 
-        return GRect.fromPoints(this.mapPoint(p1), this.mapPoint(p2), this.mapPoint(p3), this.mapPoint(p4));
+        return [this.mapPoint(p1), this.mapPoint(p2), this.mapPoint(p3), this.mapPoint(p4)];
+    };
+
+    /**
+     * Map a rectangle into a rect within this transformation
+     * @param {GRect} rect the rectangle to map
+     * @return {GRect} a new rect mapped into this transformation
+     */
+    GTransform.prototype.mapRect = function (rect) {
+        // If identity nothing to transform so return
+        if (this.isIdentity()) {
+            return rect;
+        }
+
+        return GRect.fromPoints.apply(null, this.mapQuadrilateral(rect));
     };
 
     /** @override */

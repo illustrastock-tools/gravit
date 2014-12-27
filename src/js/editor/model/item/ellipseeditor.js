@@ -8,7 +8,7 @@
      */
     function GEllipseEditor(ellipse) {
         GPathBaseEditor.call(this, ellipse);
-        this._flags |= GBlockEditor.Flag.ResizeAll;
+        this._flags |= GBlockEditor.Flag.ResizeAll | GBlockEditor.Flag.ResizeOrig;
     };
     GObject.inherit(GEllipseEditor, GPathBaseEditor);
     GElementEditor.exports(GEllipseEditor, GEllipse);
@@ -45,16 +45,21 @@
     };
 
     /** @override */
+    GEllipseEditor.prototype.createElementPreview = function () {
+        if (!this._elementPreview) {
+            this._elementPreview = new GEllipse();
+            this._elementPreview.transferProperties(this._element,
+                [GShape.GeometryProperties, GEllipse.GeometryProperties], true);
+        }
+    };
+
+    /** @override */
     GEllipseEditor.prototype.movePart = function (partId, partData, position, viewToWorldTransform, guides, shift, option) {
         GPathBaseEditor.prototype.movePart.call(this, partId, partData, position, viewToWorldTransform, guides, shift, option);
         if (partId === GEllipseEditor.START_ANGLE_PART_ID || partId === GEllipseEditor.END_ANGLE_PART_ID) {
             var newPos = viewToWorldTransform.mapPoint(position);
 
-            if (!this._elementPreview) {
-                this._elementPreview = new GEllipse();
-                this._elementPreview.transferProperties(this._element,
-                    [GShape.GeometryProperties, GEllipse.GeometryProperties], true);
-            }
+            this.createElementPreview();
 
             var sourceTransform = this._element.getTransform();
             if (sourceTransform) {
@@ -92,6 +97,11 @@
             this._element.setProperties(['sa', 'ea'], propertyValues);
         }
         GPathBaseEditor.prototype.applyPartMove.call(this, partId, partData);
+    };
+
+    /** @override */
+    GEllipseEditor.prototype.canApplyTransform = function () {
+        return this._elementPreview || GPathBaseEditor.prototype.canApplyTransform.call(this);
     };
 
     /** @override */

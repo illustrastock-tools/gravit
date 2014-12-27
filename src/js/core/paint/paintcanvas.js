@@ -264,62 +264,6 @@
     };
 
     /**
-     * Returns the contents of the canvas as a png image
-     * with a resolution of 96dpi as a base64
-     * encoded data url
-     * @return {String}
-     */
-    GPaintCanvas.prototype.asPNGImage = function () {
-        return this._canvasContext.canvas.toDataURL('image/png');
-    };
-
-    /**
-     * Returns the contents of the canvas as a jpeg image
-     * with a resolution of 96dpi as a base64
-     * encoded data url
-     * @param {Number} [quality] the quality of the image from
-     * 0.0 to 1.0, defaults to 1.0
-     * @return {String}
-     */
-    GPaintCanvas.prototype.asJPEGImage = function (quality) {
-        quality = quality || 1.0;
-        return this._canvasContext.canvas.toDataURL('image/jpeg', quality);
-    };
-
-    /**
-     * Returns the contents of the canvas as a png image
-     * with a resolution of 96dpi as an ArrayBuffer
-     * @param {Function} done callback function called with the ArrayBuffer
-     */
-    GPaintCanvas.prototype.asPNGImageBuffer = function (done) {
-        this._canvasContext.canvas.toBlob(function (blob) {
-            var reader = new FileReader();
-            reader.onload = function (event) {
-                done(event.target.result);
-            };
-            reader.readAsArrayBuffer(blob);
-        }, 'image/png');
-    };
-
-    /**
-     * Returns the contents of the canvas as a jpeg image
-     * with a resolution of 96dpi as an ArrayBuffer
-     * @param {Function} done callback function called with the ArrayBuffer
-     * @param {Number} [quality] the quality of the image from
-     * 0.0 to 1.0, defaults to 1.0
-     */
-    GPaintCanvas.prototype.asJPEGImageBuffer = function (done, quality) {
-        quality = quality || 1.0;
-        this._canvasContext.canvas.toBlob(function (blob) {
-            var reader = new FileReader();
-            reader.onload = function (event) {
-                done(event.target.result);
-            };
-            reader.readAsArrayBuffer(blob);
-        }, 'image/jpeg', quality);
-    };
-
-    /**
      * Resize this canvas
      * @param {Number} width the new width for the canvas
      * @param {Number} height the new height for the canvas
@@ -726,51 +670,78 @@
     };
 
     /**
-     * Pushes a vertex source into this canvas overwriting any
+     * Pushes either a vertex source or an array of points into this canvas overwriting any
      * previously added vertices. This will act as source for different
      * functions like clipVertices, strokeVertices and fillVertices
-     * @param {GVertexSource} vertexSource the vertex source to use for clipping
+     * @param {GVertexSource|Array<GPoint>} source the source of vertices or points to be added
+     * @param {Boolean} [ensureClosed] if set, ensures the vertices are closed. Defaults to false.
      */
-    GPaintCanvas.prototype.putVertices = function (vertexSource) {
-        if (vertexSource.rewindVertices(0)) {
-            this._canvasContext.beginPath();
+    GPaintCanvas.prototype.putVertices = function (source, ensureClosed) {
+        if (source instanceof Array) {
+            if (source.length) {
+                this._canvasContext.beginPath();
 
-            var vertex = new GVertex();
-            while (vertexSource.readVertex(vertex)) {
-                switch (vertex.command) {
-                    case GVertex.Command.Move:
-                        this._canvasContext.moveTo(vertex.x, vertex.y);
-                        break;
-                    case GVertex.Command.Line:
-                        this._canvasContext.lineTo(vertex.x, vertex.y);
-                        break;
-                    case GVertex.Command.Curve:
-                    {
-                        var xTo = vertex.x;
-                        var yTo = vertex.y;
-                        if (vertexSource.readVertex(vertex)) {
-                            this._canvasContext.quadraticCurveTo(vertex.x, vertex.y, xTo, yTo);
-                        }
+                for (var i = 0; i < source.length; ++i) {
+                    var pt = source[i];
+
+                    if (i === 0) {
+                        this._canvasContext.moveTo(pt.getX(), pt.getY());
+                    } else {
+                        this._canvasContext.lineTo(pt.getX(), pt.getY());
                     }
-                        break;
-                    case GVertex.Command.Curve2:
-                    {
-                        var xTo = vertex.x;
-                        var yTo = vertex.y;
-                        if (vertexSource.readVertex(vertex)) {
-                            var cx1 = vertex.x;
-                            var cy1 = vertex.y;
-                            if (vertexSource.readVertex(vertex)) {
-                                this._canvasContext.bezierCurveTo(cx1, cy1, vertex.x, vertex.y, xTo, yTo);
+                }
+
+                if (ensureClosed) {
+                    this._canvasContext.closePath();
+                }
+            }
+        } else {
+            if (source.rewindVertices(0)) {
+                var closed = false;
+                this._canvasContext.beginPath();
+
+                var vertex = new GVertex();
+                while (source.readVertex(vertex)) {
+                    switch (vertex.command) {
+                        case GVertex.Command.Move:
+                            this._canvasContext.moveTo(vertex.x, vertex.y);
+                            break;
+                        case GVertex.Command.Line:
+                            this._canvasContext.lineTo(vertex.x, vertex.y);
+                            break;
+                        case GVertex.Command.Curve:
+                        {
+                            var xTo = vertex.x;
+                            var yTo = vertex.y;
+                            if (source.readVertex(vertex)) {
+                                this._canvasContext.quadraticCurveTo(vertex.x, vertex.y, xTo, yTo);
                             }
                         }
+                            break;
+                        case GVertex.Command.Curve2:
+                        {
+                            var xTo = vertex.x;
+                            var yTo = vertex.y;
+                            if (source.readVertex(vertex)) {
+                                var cx1 = vertex.x;
+                                var cy1 = vertex.y;
+                                if (source.readVertex(vertex)) {
+                                    this._canvasContext.bezierCurveTo(cx1, cy1, vertex.x, vertex.y, xTo, yTo);
+                                }
+                            }
+                        }
+                            break;
+                        case GVertex.Command.Close:
+                            closed = true;
+                            this._canvasContext.closePath();
+                            break;
+                        default:
+                            throw new Error("Unknown Command Type - " + vertex.command);
                     }
-                        break;
-                    case GVertex.Command.Close:
-                        this._canvasContext.closePath();
-                        break;
-                    default:
-                        throw new Error("Unknown Command Type - " + vertex.command);
+                }
+
+                if (!closed && ensureClosed) {
+                    this._canvasContext.closePath();
                 }
             }
         }
