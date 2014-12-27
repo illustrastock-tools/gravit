@@ -1,0 +1,11 @@
+@import '../../variables';
+
+.palette-layers {
+  padding: 2px;
+
+  .layers {
+    display: block;
+    min-height: 184px;
+    height: 100%;
+  }
+}

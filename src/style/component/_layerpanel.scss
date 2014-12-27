@@ -1,165 +1,162 @@
 @import '../_variables';
 
-.palette-layers {
-  padding: 2px;
+.g-layer-panel {
 
-  .layers {
-    display: block;
-    min-height: 184px;
-    height: 100%;
-    margin-left: 0px;
-    margin-bottom: 0;
-    margin-top: 0px;
+  display: block;
+  min-height: 184px;
+  height: 100%;
+  margin-left: 0px;
+  margin-bottom: 0;
+  margin-top: 0px;
 
-    &, * {
-      line-height: 1;
+  &, * {
+    line-height: 1;
+  }
+
+  div.layer-row {
+    height: auto;
+    line-height: 23px !important;
+    margin: 0px;
+    border-bottom: 1px solid $borderColor;
+    position: absolute;
+    width: 100%;
+    *width: auto;
+    white-space: nowrap;
+
+    &.g-active {
+      background: $activeColor;
+
+      &, * {
+        color: $activeTextColor;
+      }
     }
 
-    div.layer-row {
-      height: auto;
-      line-height: 23px !important;
-      margin: 0px;
-      border-bottom: 1px solid $borderColor;
-      position: absolute;
-      width: 100%;
-      *width: auto;
-      white-space: nowrap;
+    &.g-selected {
+      background: $selectedColor;
 
-      &.g-active {
-        background: $activeColor;
+      &, * {
+        color: $selectedTextColor;
+      }
+    }
 
-        &, * {
-          color: $activeTextColor;
-        }
+    &.g-drop {
+      background-color: mix($darkShadowColor, $dragColor);
+      position: relative;
+      z-index: 10;
+      margin-right: 10px;
+      display: block;
+
+      &, * {
+        color: $dragTextColor;
       }
 
       &.g-selected {
-        background: $selectedColor;
+        background-color: mix($selectedColor, $dragColor);
+      }
+
+      &.g-active {
+        background-color: mix($activeColor, $dragColor);
+      }
+    }
+
+    > * {
+      display: table-cell;
+
+      &.layer-visibility, &.layer-lock, &.layer-outline {
+        padding: 4px 0px;
+        vertical-align: middle;
+        border-right: 1px solid $borderColor;
+        min-width: 21px;
+        max-width: 21px;
+        text-align: center;
+
+        &.layer-default {
+          opacity: 0.5;
+        }
 
         &, * {
-          color: $selectedTextColor;
+          cursor: pointer;
         }
       }
 
-      &.g-drop {
-        background-color: mix($darkShadowColor, $dragColor);
-        position: relative;
-        z-index: 10;
-        margin-right: 10px;
-        display: block;
-
-        &, * {
-          color: $dragTextColor;
-        }
-
-        &.g-selected {
-          background-color: mix($selectedColor, $dragColor);
-        }
-
-        &.g-active {
-          background-color: mix($activeColor, $dragColor);
-        }
+      &.layer-icon {
+        padding: 4px 0px;
+        vertical-align: middle;
+        padding-left: 5px;
       }
 
-      > * {
-        display: table-cell;
+      &.layer-color {
+        padding: 4px 0px;
+        vertical-align: middle;
+        min-width: 8px;
+        max-width: 8px;
+      }
 
-        &.layer-visibility, &.layer-lock, &.layer-outline {
-          padding: 4px 0px;
-          vertical-align: middle;
-          border-right: 1px solid $borderColor;
-          min-width: 21px;
-          max-width: 21px;
-          text-align: center;
+      &.layer-toggler, &.layer-spacer {
+        padding: 4px 0px;
+        vertical-align: middle;
+        min-width: 8px;
+        max-width: 8px;
+        padding-left: 5px;
+      }
 
-          &.layer-default {
-            opacity: 0.5;
-          }
-
-          &, * {
-            cursor: pointer;
-          }
-        }
-
-        &.layer-icon {
-          padding: 4px 0px;
-          vertical-align: middle;
-          padding-left: 5px;
-        }
-
-        &.layer-color {
-          padding: 4px 0px;
-          vertical-align: middle;
-          min-width: 8px;
-          max-width: 8px;
-        }
-
-        &.layer-toggler, &.layer-spacer {
-          padding: 4px 0px;
-          vertical-align: middle;
-          min-width: 8px;
-          max-width: 8px;
-          padding-left: 5px;
-        }
-
-        &.layer-title {
-          padding: 4px 0px;
-          vertical-align: middle;
-          margin-left: 0;
-          width: 100%;
-          padding-top: 5px;
-          padding-left: 5px;
-          line-height: 1 !important;
-        }
+      &.layer-title {
+        padding: 4px 0px;
+        vertical-align: middle;
+        margin-left: 0;
+        width: 100%;
+        padding-top: 5px;
+        padding-left: 5px;
+        line-height: 1 !important;
       }
     }
   }
+}
 
-  .g-circle-span1 {
-    border-radius: 9999px;
-    background: $dragColor;
-    border: 1px solid white;
-    height: 7px;
-    width: 7px;
-    position: absolute;
-    pointer-events: none;
-    z-index: 10;
-  }
+.g-circle-span1 {
+  border-radius: 9999px;
+  background: $dragColor;
+  border: 1px solid white;
+  height: 7px;
+  width: 7px;
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+}
 
-  .g-up-separator-span1 {
-    @extend .g-circle-span1;
-    top: -4px;
-    left: 0px;
-  }
+.g-up-separator-span1 {
+  @extend .g-circle-span1;
+  top: -4px;
+  left: 0px;
+}
 
-  .g-down-separator-span1 {
-    @extend .g-circle-span1;
-    bottom: -5px;
-    left: 0px;
-  }
+.g-down-separator-span1 {
+  @extend .g-circle-span1;
+  bottom: -5px;
+  left: 0px;
+}
 
-  .g-line-span2 {
-    position: absolute;
-    width: 100%;
-    height: inherit;
-    line-height: 2px;
-    pointer-events: none;
-    top: -1px;
-  }
+.g-line-span2 {
+  position: absolute;
+  width: 100%;
+  height: inherit;
+  line-height: 2px;
+  pointer-events: none;
+  top: -1px;
+}
 
-  .g-up-separator-span2 {
-    @extend .g-line-span2;
-    border-top: solid 2px $dragColor;
-  }
+.g-up-separator-span2 {
+  @extend .g-line-span2;
+  border-top: solid 2px $dragColor;
+}
 
-  .g-down-separator-span2 {
-    @extend .g-line-span2;
-    border-bottom: solid 2px $dragColor;
-  }
+.g-down-separator-span2 {
+  @extend .g-line-span2;
+  border-bottom: solid 2px $dragColor;
+}
 
-  span.g-dragging {
-    color: #fff;
-    background: #000;
-    opacity: 0.6;
-  }
+span.g-dragging {
+  color: #fff;
+  background: #000;
+  opacity: 0.6;
 }

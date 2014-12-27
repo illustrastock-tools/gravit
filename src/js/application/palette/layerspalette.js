@@ -77,7 +77,7 @@
         gApp.addEventListener(GApplication.DocumentEvent, this._documentEvent, this);
 
         this._layersTree = $('<div></div>')
-            .addClass('g-list layers vtree')
+            .addClass('g-list layers')
             .appendTo(htmlElement);
 
         this._layersTree.gLayerPanel({

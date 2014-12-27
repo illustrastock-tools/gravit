@@ -454,8 +454,9 @@
             return this.each(function () {
                 // {Element} a HTML container for displaying the tree
                 var container = this;
-                var $this = $(this);
-                $this.data('glayerpanel', {
+                var $this = $(this)
+                    .addClass('g-layer-panel')
+                    .data('glayerpanel', {
                         vtree: new VTree(container, renderer.bind(this), options.nodeStyle,
                             options.expandRenderer ? options.expandRenderer : null,
                             options.expandStyle == options.collapseStyle ? options.expandStyle : null,
