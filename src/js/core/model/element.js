@@ -1564,6 +1564,7 @@
                 }
             }
         } else if (change == GElement._Change.FinishGeometryUpdate) {
+            this._sourceBBox = null;
             if (this.isVisible()) {
                 var savedPaintBBox = null;
                 if (this.isPaintable()) {
