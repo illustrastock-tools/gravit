@@ -1651,7 +1651,7 @@
     };
 
     /** @override */
-    GPathBase.prototype._calculateOrigGeometryBBox = function () {
+    GPathBase.prototype._calculateSourceBBox = function () {
         var vertices = new GVertexContainer();
         this._getAnchorPoints()._generateVertices(vertices, null, false);
         return ifVertexInfo.calculateBounds(vertices, true);

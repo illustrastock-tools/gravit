@@ -71,11 +71,11 @@
     };
 
     /** @override */
-    GEllipse.prototype._calculateOrigGeometryBBox = function () {
+    GEllipse.prototype._calculateSourceBBox = function () {
         if (GMath.isEqualEps(this.$sa, this.$ea)) {
             return new GRect(-1, -1, 2, 2);
         } else {
-            return GPathBase.prototype._calculateOrigGeometryBBox.call(this);
+            return GPathBase.prototype._calculateSourceBBox.call(this);
         }
     };
 

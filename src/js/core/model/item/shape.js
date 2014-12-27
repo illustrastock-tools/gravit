@@ -62,11 +62,6 @@
     // -----------------------------------------------------------------------------------------------------------------
     // GShape Class
     // -----------------------------------------------------------------------------------------------------------------
-    /**
-     * @type GRect
-     * @private
-     */
-    GShape.prototype._origGeometryBBox = null;
 
     /** @override */
     GShape.prototype.assignFrom = function (other) {
@@ -231,24 +226,23 @@
         }
     };
 
-    GShape.prototype._calculateOrigGeometryBBox = function () {
-        var bbox = this.getGeometryBBox();
-        if (this.$trf) {
-            bbox = this.$trf.inverted().mapRect(bbox);
-        }
-        return bbox;
-    };
+    /**
+     * Calculates a bbox used for patterns
+     * @returns {GRect}
+     * @private
+     */
+    GShape.prototype._getPatternBBox = function () {
+        var patternBBox = this.getSourceBBox();
 
-    GShape.prototype._getOrigBBox = function () {
-        // Immediately return if not visible at all
-        if (!this.isVisible()) {
-            return null;
+        if (!patternBBox || patternBBox.isEmpty()) {
+            patternBBox = this.getGeometryBBox();
+
+            if (this.$trf) {
+                patternBBox = this.$trf.inverted().mapRect(patternBBox);
+            }
         }
 
-        if (this._geometryBBbox == null || this._origGeometryBBox == null) {
-            this._origGeometryBBox = this._calculateOrigGeometryBBox();
-        }
-        return this._origGeometryBBox;
+        return patternBBox;
     };
 
     /**
@@ -258,7 +252,7 @@
      */
     GShape.prototype._paintFill = function (context) {
         if (!context.configuration.isOutline(context) && this.hasStyleFill()) {
-            var fill = this._createShapePaint(context, this.$_fpt, this._getOrigBBox());
+            var fill = this._createShapePaint(context, this.$_fpt, this._getPatternBBox());
             if (fill) {
                 var canvas = context.canvas;
                 canvas.putVertices(this);
@@ -325,7 +319,7 @@
     GShape.prototype._paintBorder = function (context) {
         var outline = context.configuration.isOutline(context);
         if (!outline && this.hasStyleBorder()) {
-            var border = this._createShapePaint(context, this.$_bpt, this._getOrigBBox());
+            var border = this._createShapePaint(context, this.$_bpt, this._getPatternBBox());
 
             if (border && border.paint) {
                 var canvas = context.canvas;
@@ -393,9 +387,6 @@
     /** @override */
     GShape.prototype._handleChange = function (change, args) {
         this._handleGeometryChangeForProperties(change, args, GShape.GeometryProperties);
-        if (change == GElement._Change.FinishGeometryUpdate) {
-            this._origGeometryBBox = null;
-        }
 
         if (change === GNode._Change.Store) {
             this.storeProperties(args, GShape.GeometryProperties, function (property, value) {

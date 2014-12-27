@@ -28,12 +28,7 @@
          * The editor supports all resize handles
          * @type Number
          */
-        ResizeAll: (1 << 10) | (1 << 11),
-
-        /**
-         * The editor should work with original bbox resizing
-         */
-        ResizeOrig: 1 << 12
+        ResizeAll: (1 << 10) | (1 << 11)
     };
 
     GBlockEditor.RESIZE_HANDLE_PART_ID = GUtil.uuid();
@@ -47,6 +42,9 @@
         }
     };
 
+    /**
+     * Called to create a new element for previewing
+     */
     GBlockEditor.prototype.createElementPreview = function () {
         // NO-OP
     };
@@ -58,21 +56,29 @@
         if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
             var newPos = viewToWorldTransform.mapPoint(position);
             newPos = guides.mapPoint(newPos);
+
+            var bbox = this._element.getSourceBBox();
+            var useSourceBBox = true;
+            if (!bbox || bbox.isEmpty()) {
+                bbox = this._element.getGeometryBBox();
+                useSourceBBox = false;
+            }
+
             var trf = null;
-            if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+            if (useSourceBBox) {
                 trf = this._element.getTransform() || new GTransform();
                 var trfInv = trf.inverted();
                 newPos = trfInv.mapPoint(newPos);
             }
 
-            var bbox = this.hasFlag(GBlockEditor.Flag.ResizeOrig) ? this._element._getOrigBBox() : this._element.getGeometryBBox();
             var origPos = bbox.getSide(partData.side);
 
             var dx = newPos.getX() - origPos.getX();
             var dy = newPos.getY() - origPos.getY();
 
             var curTrf = bbox.getResizeTransform(partData.side, dx, dy, shift, option);
-            if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+
+            if (useSourceBBox) {
                 this.createElementPreview();
                 var pe = this.getPaintElement();
                 trf = curTrf.multiplied(trf);
@@ -183,10 +189,10 @@
     GBlockEditor.prototype._iterateResizeHandles = function (iterator, transform) {
         var pe = this.getPaintElement();
         var trf = null;
-        var bbox = null;
-        if (this.hasFlag(GBlockEditor.Flag.ResizeOrig)) {
+        var bbox = pe.getSourceBBox();
+
+        if (bbox && !bbox.isEmpty()) {
             trf = pe.getTransform() || new GTransform();
-            bbox = pe._getOrigBBox();
         } else {
             trf = new GTransform();
             bbox = pe.getGeometryBBox();

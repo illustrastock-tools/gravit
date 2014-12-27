@@ -8,7 +8,7 @@
      */
     function GImageEditor(image) {
         GShapeEditor.call(this, image);
-        this._flags |= GBlockEditor.Flag.ResizeAll | GBlockEditor.Flag.ResizeOrig;
+        this._flags |= GBlockEditor.Flag.ResizeAll;
     };
     GObject.inherit(GImageEditor, GShapeEditor);
     GElementEditor.exports(GImageEditor, GImage);
@@ -25,7 +25,7 @@
             this._elementPreview = new GRectangle();
             var imageTransform = this._element.getTransform();
 
-            var imageSourceBBox = this._element._getOrigBBox();
+            var imageSourceBBox = this._element.getSourceBBox();
 
             var rectToImageTransform = new GTransform(imageSourceBBox.getWidth() / 2, 0, 0, imageSourceBBox.getHeight() / 2,
                 imageSourceBBox.getX() + imageSourceBBox.getWidth() / 2, imageSourceBBox.getY() + imageSourceBBox.getHeight() / 2)

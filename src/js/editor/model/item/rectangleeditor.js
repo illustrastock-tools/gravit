@@ -8,7 +8,7 @@
      */
     function GRectangleEditor(rectangle) {
         GPathBaseEditor.call(this, rectangle);
-        this._flags |= GBlockEditor.Flag.ResizeAll | GBlockEditor.Flag.ResizeOrig;
+        this._flags |= GBlockEditor.Flag.ResizeAll;
     };
     GObject.inherit(GRectangleEditor, GPathBaseEditor);
     GElementEditor.exports(GRectangleEditor, GRectangle);

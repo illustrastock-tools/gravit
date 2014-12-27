@@ -243,7 +243,7 @@
     };
 
     /** @override */
-    GRectangle.prototype._calculateOrigGeometryBBox = function () {
+    GRectangle.prototype._calculateSourceBBox = function () {
         return new GRect(-1, -1, 2, 2);
     };
 

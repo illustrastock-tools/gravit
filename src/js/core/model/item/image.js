@@ -174,7 +174,7 @@
     };
 
     /** @override */
-    GImage.prototype._calculateOrigGeometryBBox = function () {
+    GImage.prototype._calculateSourceBBox = function () {
         if (this._image ) {
             return new GRect(0, 0, this._getWidth(), this._getHeight());
         }
@@ -296,6 +296,9 @@
      * @private
      */
     GImage.prototype._updateImage = function () {
+        // Clear source bbox as it depends on our image's size
+        this._sourceBBox = null;
+
         if (this._workspace && this._scene) {
             this._setStatus(GImage.ImageStatus.Resolving);
             this._workspace.resolveUrl(this.$url, this._resolvedImage.bind(this));

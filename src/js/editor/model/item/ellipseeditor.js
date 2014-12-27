@@ -8,7 +8,7 @@
      */
     function GEllipseEditor(ellipse) {
         GPathBaseEditor.call(this, ellipse);
-        this._flags |= GBlockEditor.Flag.ResizeAll | GBlockEditor.Flag.ResizeOrig;
+        this._flags |= GBlockEditor.Flag.ResizeAll;
     };
     GObject.inherit(GEllipseEditor, GPathBaseEditor);
     GElementEditor.exports(GEllipseEditor, GEllipse);

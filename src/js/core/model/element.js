@@ -726,7 +726,13 @@
      * @type GRect
      * @private
      */
-    GElement.prototype._geometryBBbox = null;
+    GElement.prototype._sourceBBox = null;
+
+    /**
+     * @type GRect
+     * @private
+     */
+    GElement.prototype._geometryBBox = null;
 
     /**
      * @type GRect
@@ -744,7 +750,23 @@
     };
 
     /**
-     * Called to get the geometry bbox which usually is the bbox of the underlying shape
+     * Called to get the source bbox
+     * @return {GRect} the source bbox, maybe null
+     */
+    GElement.prototype.getSourceBBox = function () {
+        // Immediately return if not visible at all
+        if (!this.isVisible()) {
+            return null;
+        }
+
+        if (this._sourceBBox == null) {
+            this._sourceBBox = this._calculateSourceBBox();
+        }
+        return this._sourceBBox;
+    };
+
+    /**
+     * Called to get the geometry bbox
      * @return {GRect} the geometry bbox, may never be null
      * @version 1.0
      */
@@ -754,10 +776,10 @@
             return null;
         }
 
-        if (this._geometryBBbox == null) {
-            this._geometryBBbox = this._calculateGeometryBBox();
+        if (this._geometryBBox == null) {
+            this._geometryBBox = this._calculateGeometryBBox();
         }
-        return this._geometryBBbox;
+        return this._geometryBBox;
     };
 
     /**
@@ -1353,6 +1375,15 @@
     };
 
     /**
+     * Called whenever the underliny source bbox needs to be calculated
+     * @return {GRect} the calculated source bbox
+     * @private
+     */
+    GElement.prototype._calculateSourceBBox = function () {
+        return null;
+    };
+
+    /**
      * Called whenever the underliny geometry bbox needs to be calculated
      * @return {GRect} the calculated geometry bbox, may never be null
      * @private
@@ -1550,7 +1581,7 @@
                 if (invalidateArgs === 1) {
                     this._paintBBox = null;
                 } else if (invalidateArgs === 0) {
-                    this._geometryBBbox = null;
+                    this._geometryBBox = null;
                     this._paintBBox = null;
                 }
 
@@ -1636,7 +1667,7 @@
      */
     GElement.prototype._invalidateGeometryForChildUpdate = function () {
         if (this.hasMixin(GNode.Container)) {
-            this._geometryBBbox = null;
+            this._geometryBBox = null;
             this._paintBBox = null;
         }
     };
