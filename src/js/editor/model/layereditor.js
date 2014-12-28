@@ -28,14 +28,6 @@
     };
 
     /** @override */
-    GLayerEditor.prototype._prePaint = function (transform, context) {
-        if (this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) {
-            this._paintBBoxOutline(transform, context);
-        }
-        //GBlockEditor.prototype._prePaint.call(this, transform, context);
-    };
-
-    /** @override */
     GLayerEditor.prototype.toString = function () {
         return "[Object GLayerEditor]";
     };

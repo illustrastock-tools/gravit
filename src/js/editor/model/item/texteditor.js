@@ -403,10 +403,8 @@
     };
 
     /** @override */
-    GTextEditor.prototype._prePaint = function (transform, context) {
-        if ((this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) && !this.isInlineEdit()) {
-            this._paintBBoxOutline(transform, context);
-        }
+    GTextEditor.prototype._paintOutline = function (transform, context, paintBBox, color) {
+        GBlockEditor.prototype._paintOutline.call(this, transform, context, true, color);
     };
 
     /** @private */

@@ -53,20 +53,6 @@
     };
 
     /** @override */
-    GShapeEditor.prototype._prePaint = function (transform, context) {
-        if (this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) {
-            var element = this.getPaintElement();
-
-            // Work in transformed coordinates to avoid scaling outline
-            var transformer = new GVertexTransformer(element, transform);
-            context.canvas.putVertices(new GVertexPixelAligner(transformer));
-
-            // Paint either outlined or highlighted (highlighted has a higher precedence)
-            context.canvas.strokeVertices(this.hasFlag(GElementEditor.Flag.Highlighted) ? context.highlightOutlineColor : context.selectionOutlineColor, 1);
-        }
-    };
-
-    /** @override */
     GShapeEditor.prototype._postPaint = function (transform, context) {
         // Paint center cross if desired + selected + in detail mode
         if (this.hasFlag(GElementEditor.Flag.Selected) && this.hasFlag(GElementEditor.Flag.Detail) && this._hasCenterCross()) {

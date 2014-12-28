@@ -138,33 +138,6 @@
     };
 
     /** @override */
-    GCompoundPathEditor.prototype._prePaint = function (transform, context) {
-        if (this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) {
-            var element = this.getPaintElement();
-
-            // Work in transformed coordinates to avoid scaling outline
-            var transformer = new GVertexTransformer(element, transform);
-            context.canvas.putVertices(new GVertexPixelAligner(transformer));
-
-            // Paint either outlined or highlighted (highlighted has a higher precedence)
-            context.canvas.strokeVertices(this.hasFlag(GElementEditor.Flag.Highlighted) ? context.highlightOutlineColor : context.selectionOutlineColor, 1);
-
-            for (var pt = this._element.getPaths().getFirstChild(); pt != null; pt = pt.getNext()) {
-                var pathEditor = GElementEditor.openEditor(pt);
-                pathEditor._prePaint(transform, context);
-            }
-        }
-    };
-
-    /** @override */
-    GCompoundPathEditor.prototype._postPaint = function (transform, context) {
-        for (var pt = this._element.getPaths().getFirstChild(); pt != null; pt = pt.getNext()) {
-            var pathEditor = GElementEditor.openEditor(pt);
-            pathEditor._postPaint(transform, context);
-        }
-    };
-
-    /** @override */
     GCompoundPathEditor.prototype._partIdAreEqual = function (a, b) {
         var eqs = (a.type === b.type);
         if (eqs && a.type == GPathEditor.PartType.Point) {

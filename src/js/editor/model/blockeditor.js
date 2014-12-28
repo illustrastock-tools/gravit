@@ -113,8 +113,8 @@
                 targetTransform = this._transform.multiplied(transform);
             }
 
-            // Let descendant classes do some pre-painting
-            this._prePaint(targetTransform, context);
+            // Paint outline
+            this._paintOutline(targetTransform, context);
 
             // Paint resize handles if desired
             if (this._showResizeHandles()) {
@@ -149,16 +149,6 @@
         }
 
         return null;
-    };
-
-    /**
-     * Called for subclasses to do some custom painting beneath of the outline
-     * @param {GTransform} transform the current transformation in use
-     * @param {GPaintContext} context the paint context to paint on
-     * @private
-     */
-    GBlockEditor.prototype._prePaint = function (transform, context) {
-
     };
 
     /**
@@ -230,43 +220,52 @@
     };
 
     /**
-     * Paint bbox outline of underlying element
+     * Paint outline or bbox outline of underlying element
      * @param {GTransform} transform the current transformation in use
      * @param {GPaintContext} context the paint context to paint on
+     * @param {Boolean} paintBBox - if true, only bbox outline will be painted instead of element itself
      * @param {GColor} [color] the color for the outline. If not provided,
      * uses either selection or highlight color depending on the current state.
      * @private
      */
-    GBlockEditor.prototype._paintBBoxOutline = function (transform, context, color) {
-        // Calculate transformed geometry bbox
-        //var sourceRect = this._element.getGeometryBBox();
-        var targetTransform = transform;
+    GBlockEditor.prototype._paintOutline = function (transform, context, paintBBox, color) {
         var element = this.getPaintElement();
-        var sourceRect = element.getSourceBBox();
-        if (!sourceRect || sourceRect.isEmpty()) {
-            sourceRect = element.getGeometryBBox();
+        var vertices = null;
+        var makeClosed = false;
+        if (element.hasMixin(GVertexSource) && !paintBBox) {
+            // Work in transformed coordinates to avoid scaling outline
+            var transformer = new GVertexTransformer(element, transform);
+            vertices = new GVertexPixelAligner(transformer);
         } else {
-            var trf = element.getTransform();
-            if (trf) {
-                targetTransform = trf.multiplied(targetTransform);
-            }
-        }
-        var transformedQuadrilateral = targetTransform.mapQuadrilateral(sourceRect);
-
-        if (transformedQuadrilateral && transformedQuadrilateral.length) {
-            if (!color) {
-                if (this.hasFlag(GElementEditor.Flag.Highlighted)) {
-                    color = context.highlightOutlineColor;
-                } else {
-                    color = context.selectionOutlineColor;
+            var targetTransform = transform;
+            var sourceRect = element.getSourceBBox();
+            if (!sourceRect || sourceRect.isEmpty()) {
+                sourceRect = element.getGeometryBBox();
+            } else {
+                var trf = element.getTransform();
+                if (trf) {
+                    targetTransform = trf.multiplied(targetTransform);
                 }
             }
+            var transformedQuadrilateral = targetTransform.mapQuadrilateral(sourceRect);
 
-            context.canvas.putVertices(transformedQuadrilateral.map(function (point) {
-                return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5);
-            }), true/*make closed*/);
+            if (transformedQuadrilateral && transformedQuadrilateral.length) {
+                vertices = transformedQuadrilateral.map(function (point) {
+                    return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5)
+                });
 
-            context.canvas.strokeVertices(color, 1);
+                makeClosed = true;
+            }
+        }
+        if (vertices) {
+            context.canvas.putVertices(vertices, makeClosed);
+
+            // Paint either outlined or highlighted (highlighted has a higher precedence)
+            context.canvas.strokeVertices(
+                color ? color :
+                    (this.hasFlag(GElementEditor.Flag.Highlighted) ? context.highlightOutlineColor :
+                        context.selectionOutlineColor),
+                1);
         }
     };
 

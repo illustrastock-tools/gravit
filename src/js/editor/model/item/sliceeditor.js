@@ -43,24 +43,6 @@
     };
 
     /** @override */
-    GSliceEditor.prototype._prePaint = function (transform, context) {
-        if (this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) {
-           /* var element = this.getPaintElement();
-            if (element.hasMixin(GVertexSource)) {
-                // Work in transformed coordinates to avoid scaling outline
-                var transformer = new GVertexTransformer(element, transform);
-                context.canvas.putVertices(new GVertexPixelAligner(transformer));
-
-                // Paint either outlined or highlighted (highlighted has a higher precedence)
-                context.canvas.strokeVertices(this.hasFlag(GElementEditor.Flag.Highlighted) ? context.highlightOutlineColor : context.selectionOutlineColor, 1);
-            } else { */
-                this._paintBBoxOutline(transform, context);
-            //}
-        }
-        //GBlockEditor.prototype._prePaint.call(this, transform, context);
-    };
-
-    /** @override */
     GSliceEditor.prototype.toString = function () {
         return "[Object GSliceEditor]";
     };

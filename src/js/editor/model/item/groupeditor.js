@@ -14,14 +14,6 @@
     GElementEditor.exports(GGroupEditor, GGroup);
 
     /** @override */
-    GGroupEditor.prototype._prePaint = function (transform, context) {
-        if (this.hasFlag(GElementEditor.Flag.Selected) || this.hasFlag(GElementEditor.Flag.Highlighted)) {
-            this._paintBBoxOutline(transform, context);
-        }
-        //GBlockEditor.prototype._prePaint.call(this, transform, context);
-    };
-
-    /** @override */
     GGroupEditor.prototype.toString = function () {
         return "[Object GGroupEditor]";
     };
