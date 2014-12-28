@@ -158,7 +158,7 @@
      * @private
      */
     GBlockEditor.prototype._prePaint = function (transform, context) {
-        // NO-OP
+
     };
 
     /**
@@ -239,8 +239,19 @@
      */
     GBlockEditor.prototype._paintBBoxOutline = function (transform, context, color) {
         // Calculate transformed geometry bbox
-        var sourceRect = this._element.getGeometryBBox();
-        var transformedQuadrilateral = transform.mapQuadrilateral(sourceRect);
+        //var sourceRect = this._element.getGeometryBBox();
+        var targetTransform = transform;
+        var element = this.getPaintElement();
+        var sourceRect = element.getSourceBBox();
+        if (!sourceRect || sourceRect.isEmpty()) {
+            sourceRect = element.getGeometryBBox();
+        } else {
+            var trf = element.getTransform();
+            if (trf) {
+                targetTransform = trf.multiplied(targetTransform);
+            }
+        }
+        var transformedQuadrilateral = targetTransform.mapQuadrilateral(sourceRect);
 
         if (transformedQuadrilateral && transformedQuadrilateral.length) {
             if (!color) {

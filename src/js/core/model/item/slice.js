@@ -56,7 +56,7 @@
 
     /** @override */
     GSlice.prototype.validateInsertion = function (parent, reference) {
-        return parent instanceof GLayer;
+        return parent instanceof GLayer || parent instanceof GScene;
     };
 
     /** @override */
@@ -81,32 +81,43 @@
     /** @override */
     GSlice.prototype._paint = function (context) {
         if (context.configuration.isSlicesVisible(context)) {
-            var sourceBBox = new GRect(-1, -1, 2, 2);
-            sourceBBox = this.$trf ? this.$trf.mapRect(sourceBBox) : sourceBBox;
+            var sourceBBox = this.getSourceBBox();
+            var targetTransform = this.$trf ? this.$trf : new GTransform();
 
             if (context.configuration.isOutline(context)) {
                 var transform = context.canvas.resetTransform();
-                var transformedRect = transform ? transform.mapRect(sourceBBox) : sourceBBox;
-                context.canvas.strokeRect(transformedRect.getX(), transformedRect.getY(),
-                    transformedRect.getWidth(), transformedRect.getHeight(), 1, context.getOutlineColor());
+                targetTransform = transform ? targetTransform.multiplied(transform) : targetTransform;
+                var transformedQuadrilateral = targetTransform.mapQuadrilateral(sourceBBox);
+
+                context.canvas.putVertices(transformedQuadrilateral.map(function (point) {
+                    return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5);
+                }), true/*make closed*/);
+                context.canvas.strokeVertices(context.getOutlineColor(), 1);
                 context.canvas.setTransform(transform);
             } else {
-                var transformedRect = sourceBBox;
-                context.canvas.fillRect(transformedRect.getX(), transformedRect.getY(),
-                    transformedRect.getWidth(), transformedRect.getHeight(), this.$cls, 0.5);
+                var transformedQuadrilateral = targetTransform.mapQuadrilateral(sourceBBox);
+                context.canvas.putVertices(transformedQuadrilateral.map(function (point) {
+                    return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5);
+                }), true/*make closed*/);
+                context.canvas.fillVertices(this.$cls, 0.5);
             }
         }
     };
 
     /** @override */
     GSlice.prototype._calculateGeometryBBox = function () {
-        var rect = new GRect(-1, -1, 2, 2);
+        var rect = this.getSourceBBox();
         return this.$trf ? this.$trf.mapRect(rect) : rect;
     };
 
     /** @override */
     GSlice.prototype._calculatePaintBBox = function () {
         return this.getGeometryBBox();
+    };
+
+    /** @override */
+    GSlice.prototype._calculateSourceBBox = function () {
+        return new GRect(-1, -1, 2, 2);
     };
 
     /** @override */

@@ -30,7 +30,7 @@
 
     /** @override */
     GImageEditor.prototype.canApplyTransform = function () {
-        return this._elementPreview || GPathBaseEditor.prototype.canApplyTransform.call(this);
+        return this._elementPreview || GShapeEditor.prototype.canApplyTransform.call(this);
     };
 
     /** @override */
@@ -39,7 +39,7 @@
             element.transferProperties(this._elementPreview, [GShape.GeometryProperties]);
             this.resetTransform();
         } else {
-            GPathBaseEditor.prototype.applyTransform.call(this, element);
+            GShapeEditor.prototype.applyTransform.call(this, element);
         }
     };
 

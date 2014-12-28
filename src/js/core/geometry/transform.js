@@ -310,6 +310,9 @@
      * @return {Array<GPoint>} an array with four points for the quadrilateral
      */
     GTransform.prototype.mapQuadrilateral = function (rect) {
+        if (!rect) {
+            return [];
+        }
         var p1 = rect.getSide(GRect.Side.TOP_LEFT);
         var p2 = rect.getSide(GRect.Side.TOP_RIGHT);
         var p3 = rect.getSide(GRect.Side.BOTTOM_RIGHT);
