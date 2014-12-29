@@ -77,8 +77,7 @@
                 var elements = [];
                 var editor = gApp.getActiveDocument().getEditor();
                 var scene = gApp.getActiveDocument().getScene();
-                var page = scene instanceof GPage ? scene : scene.querySingle('page:active');
-                var pageCntr = page.getGeometryBBox().getSide(GRect.Side.CENTER);
+                var insertPos = scene.getGeometryBBox().getSide(GRect.Side.CENTER);
                 for (var i = 0; i < nodes.length; ++i) {
                     if (nodes[i] instanceof GElement) {
                         var element = nodes[i];
@@ -86,7 +85,7 @@
                         var elemCntr = bbox ? bbox.getSide(GRect.Side.CENTER) : new GPoint(0,0);
 
                         element.transform(new GTransform(1, 0, 0, 1,
-                            -elemCntr.getX() + pageCntr.getX(), -elemCntr.getY() + pageCntr.getY()));
+                            -elemCntr.getX() + insertPos.getX(), -elemCntr.getY() + insertPos.getY()));
 
                         elements.push(element);
                     }

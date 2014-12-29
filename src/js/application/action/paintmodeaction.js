@@ -11,7 +11,7 @@
     };
     GObject.inherit(GPaintModeAction, GAction);
 
-    GPaintModeAction.ID = 'view.page.decoration';
+    GPaintModeAction.ID = 'view.paint-mode';
     GPaintModeAction.TITLE = new GLocale.Key(GPaintModeAction, 'title');
 
     /**

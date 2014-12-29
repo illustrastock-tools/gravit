@@ -46,13 +46,9 @@
             if (nodes && nodes.length > 0) {
                 var elements = [];
                 var scene = gApp.getActiveDocument().getScene();
-                var page = scene instanceof GPage ? scene : scene.querySingle('page:active');
                 for (var i = 0; i < nodes.length; ++i) {
                     if (nodes[i] instanceof GElement) {
-                        var element = nodes[i];
-                        element.transform(
-                            new GTransform(1, 0, 0, 1, page.getProperty('x'), page.getProperty('y')));
-                        elements.push(element);
+                        elements.push(nodes[i]);
                     }
                 }
 

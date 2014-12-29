@@ -88,16 +88,9 @@
             otherLayer = layer.getParent();
         }
 
-        // If there's no other layer, stop here as we need at least one layer in the scene
-        if (!otherLayer) {
-            // TODO : I18N
-            vex.dialog.alert('Unable to delete - the page needs to contain at least one layer.');
-            return;
-        }
-
         // If layer is active, de-activate it first and activate the other one
         if (layer.hasFlag(GNode.Flag.Active)) {
-            scene.setActiveLayer(otherLayer);
+            scene.setActiveLayer(otherLayer ? otherLayer : null);
         }
 
         // Finally we can remove the layer
