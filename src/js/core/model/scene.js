@@ -141,6 +141,26 @@
     };
 
     /**
+     * Sets the layer, which contains the element, as active. If element itself is a layer, it is set active.
+     * If element does not belong to any layer, all layers activation is removed.
+     * @param {GNode} elem - element for which the parent layer should be activated
+     */
+    GScene.prototype.updateActiveLayerForElem = function (elem) {
+        if (elem instanceof GItem) {
+            var layer = elem.findParent(function (node) {
+                return node instanceof GLayer;
+            });
+            if (layer && !layer.hasFlag(GNode.Flag.Active)) {
+                this.setActiveLayer(layer);
+            } else if (!layer) {
+                this.setActiveLayer(null);
+            }
+        } else if (elem instanceof GLayer) {
+            this.setActiveLayer(elem);
+        }
+    };
+
+    /**
      * Invalidate something
      * @param {GRect} [area] optional dirty area, if null marks the whole scene as being dirty
      * @private

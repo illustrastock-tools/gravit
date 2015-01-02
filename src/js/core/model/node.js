@@ -1514,6 +1514,24 @@
     };
 
     /**
+     * Find a parent node, satisfiing some visitor function
+     * @param {Function} visitor a visitor function called for each parent retrieving the current
+     * node as first parameter. If the function returns true, it is considered that the needed parent is found and
+     * this parent will be returned.
+     * @returns {GNode}
+     */
+    GNode.prototype.findParent = function (visitor) {
+        if (this._parent) {
+            if (visitor.call(null, this._parent) === true) {
+                return this._parent;
+            } else {
+                return this._parent.findParent(visitor);
+            }
+        }
+        return null;
+    };
+
+    /**
      * Checks whether this node has a certain flag setup
      * @param {Number} flag
      * @returns {Boolean}

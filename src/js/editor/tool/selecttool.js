@@ -290,7 +290,7 @@
                 selectableElements.push(element);
             } else {
                 var elementHits = this._scene.hitTest(event.client, this._view.getWorldTransform(), null,
-                    stacked, -1, GEditor.options.pickDistance, false, this._selectFilter);
+                    true, -1, GEditor.options.pickDistance, false, this._selectFilter);
 
                 // Convert element hits if any into an array of pure elements
                 // and gather the selectable elements from it
@@ -304,6 +304,8 @@
             }
 
             if (selectableElements.length > 0) {
+                var selElem = selectableElements[0];
+
                 // The element hit array can only contain more than one hit
                 // if we're in stacked mode, otherwise it will always contain
                 // approximately one (the topmost) hit element so it is safe
@@ -323,9 +325,9 @@
                         this._editor.updateSelection(ifPlatform.modifiers.shiftKey, [selectableElements[0]]);
                     } else {
                         // Select next in order
-                        this._editor.updateSelection(ifPlatform.modifiers.shiftKey, [selectableElements[lastSelIndex + 1]]);
+                        selElem = selectableElements[lastSelIndex + 1];
+                        this._editor.updateSelection(ifPlatform.modifiers.shiftKey, [selElem]);
                     }
-
                 } else {
                     this._elementUnderMouse = selectableElements[0];
 
@@ -348,6 +350,8 @@
                         this._updateMode(GSelectTool._Mode.Move);
                     }
                 }
+
+                this._scene.updateActiveLayerForElem(selElem);
             } else {
                 // No hit at all so update without any nodes
                 this._editor.updateSelection(ifPlatform.modifiers.shiftKey, []);

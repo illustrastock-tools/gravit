@@ -213,9 +213,8 @@
     /** @private */
     GLayersPalette.prototype._clickLayerTreeNodeCallback = function (layerOrItem) {
         if (layerOrItem) {
-            if (layerOrItem instanceof GLayer) {
-                this._document.getScene().setActiveLayer(layerOrItem);
-            } else if (layerOrItem instanceof GItem) {
+            this._document.getScene().updateActiveLayerForElem(layerOrItem);
+            if (layerOrItem instanceof GItem) {
                 if (ifPlatform.modifiers.shiftKey || !layerOrItem.hasFlag(GNode.Flag.Selected)) {
                     // Add element to selection
                     this._document.getEditor().updateSelection(ifPlatform.modifiers.shiftKey, [layerOrItem]);
