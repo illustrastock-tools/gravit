@@ -1,6 +1,6 @@
 (function ($) {
 
-    var units = [
+    var UNITS = [
         {
             unit: GLength.Unit.PX,
             // TODO : I18N
@@ -41,10 +41,10 @@
             return this.each(function () {
                 var $this = $(this);
                 if ($this.is("select")) {
-                    for (var i = 0; i < units.length; ++i) {
+                    for (var i = 0; i < UNITS.length; ++i) {
                         $this.append($('<option></option>')
-                            .attr('value', units[i].unit)
-                            .text(units[i].name));
+                            .attr('value', UNITS[i].unit)
+                            .text(UNITS[i].name));
                     }
                 }
             });

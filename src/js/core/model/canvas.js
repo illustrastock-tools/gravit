@@ -15,6 +15,8 @@
      * The meta properties of a canvas and their defaults
      */
     GCanvas.MetaProperties = {
+        /** Default raster scale */
+        rs: 1,
         /** The horizontal grid size */
         gx: 10,
         /** The vertical grid size */

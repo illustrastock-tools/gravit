@@ -115,6 +115,7 @@
             } else if (property === 'size-preset') {
                 var result = $('<select></select>')
                     .attr('data-property', 'size-preset')
+                    .gPageSize()
                     .on('change', function () {
                         var scene = self._document.getScene();
                         var val = $(this).val();

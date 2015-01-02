@@ -55,12 +55,19 @@
         gHost.openDirectoryPrompt(function (directory, name) {
             // TODO : Check and query for empty directory
             var project = new GProject(directory, name);
-            var page = new GPage(project);
-            page.setProperties(['name', 'w', 'h'], ['Main Page', 800, 600]);
 
-            project.save(function () {
-                gApp.addProject(project);
-                gApp.addDocument(new GDocument(page));
+            new GProjectDialog(project).open(function (result, assign) {
+                if (result) {
+                    assign();
+
+                    var page = new GPage(project);
+                    page.setProperties(['name', 'w', 'h'], ['Main Page', 800, 600]);
+
+                    project.save(function () {
+                        gApp.addProject(project);
+                        gApp.addDocument(new GDocument(page));
+                    });
+                }
             });
         });
     };

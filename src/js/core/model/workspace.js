@@ -128,13 +128,23 @@
     };
 
     /**
-     * Assign a settings
+     * Assign a setting
      * @param {String} setting
      * @param {*} value
-     * @returns {*}
      */
     GWorkspace.prototype.setSetting = function (setting, value) {
-        // TODO
+        this.setSettings([setting], [value]);
+    };
+
+    /**
+     * Assign multiple settings
+     * @param {Array<String>} settings
+     * @param {Array<*>} values
+     */
+    GWorkspace.prototype.setSettings = function (settings, values) {
+        for (var i = 0; i < settings.length; ++i) {
+            this._settings[settings[i]] = values[i];
+        }
     };
 
     /**
