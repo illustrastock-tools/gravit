@@ -511,11 +511,11 @@
             if (!arguments.length) {
                 return $this.data('glayerpanel').treeOwner;
             } else {
-                methods.clean.apply(this);
+                methods.clean.call(this);
                 $this.data('glayerpanel').treeOwner = treeOwner;
                 for (var child = treeOwner.getFirstChild(); child !== null; child = child.getNext()) {
-                    if (child instanceof GLayer) {
-                        methods.insertLayer.apply(this, child);
+                    if (child instanceof GLayer || child instanceof GItem) {
+                        methods.insertLayer.call(this, child);
                     }
                 }
 
