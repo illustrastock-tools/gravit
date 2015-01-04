@@ -151,7 +151,7 @@
         this._exclusions = [];
         for (var i = 0; i < exclusions.length; ++i) {
             node = exclusions[i];
-            if (node instanceof GShape) {
+            if (node instanceof GItem) {
                 this._exclusions.push(node);
             }
         }
