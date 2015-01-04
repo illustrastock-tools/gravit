@@ -428,6 +428,80 @@
         vtree.endUpdate();
     };
 
+    function updateLayer(layerOrItem) {
+        // Gather a tree node for the item
+        var treeNodeId = getLayerTreeNodeId.call(this, layerOrItem);
+
+        if (treeNodeId) {
+            $(this).data('glayerpanel').vtree.requestInvalidation();
+        }
+    };
+
+    function removeLayer(layerOrItem) {
+        // Gather a tree node for the item
+        var treeNodeId = getLayerTreeNodeId.call(this, layerOrItem);
+
+        if (treeNodeId) {
+            vtreeRemoveNode.call(this, treeNodeId);
+            removeNodeFromMap.call(this, layerOrItem);
+        }
+    };
+
+    /**
+     * @param {GNode.AfterInsertEvent} event
+     */
+    function afterNodeInsert(event) {
+        var data = $(this).data('glayerpanel');
+        if (!data.blockHandlers && (event.node instanceof GLayer || event.node instanceof GItem)) {
+            insertLayer.call(this, event.node);
+        }
+    };
+
+    /**
+     * @param {GNode.BeforeRemoveEvent} event
+     */
+    function beforeNodeRemove(event) {
+        var data = $(this).data('glayerpanel');
+        if (!data.blockHandlers && (event.node instanceof GLayer || event.node instanceof GItem)) {
+            removeLayer.call(this, event.node);
+        }
+    };
+
+    /**
+     * @param {GNode.AfterPropertiesChangeEvent} event
+     */
+    function afterPropertiesChange(event) {
+        var data = $(this).data('glayerpanel');
+        if (!data.blockHandlers && (event.node instanceof GLayer || event.node instanceof GItem)) {
+            updateLayer.call(this, event.node);
+        }
+    };
+
+    /**
+     * @param {GNode.AfterFlagChangeEvent} event
+     */
+    function afterFlagChange(event) {
+        var data = $(this).data('glayerpanel');
+        if (!data.blockHandlers) {
+            if ((event.node instanceof GLayer || event.node instanceof GItem) &&
+                (event.flag === GElement.Flag.Hidden ||
+                    event.flag === GElement.Flag.PartialLocked ||
+                    event.flag === GElement.Flag.FullLocked ||
+                    event.flag === GNode.Flag.Selected) ||
+                event.node instanceof GLayer && (event.flag === GNode.Flag.Active)) {
+
+                updateLayer.call(this, event.node);
+            }
+        }
+    };
+
+    function clean() {
+        var data = $(this).data('glayerpanel');
+        data.vtree.clean();
+        data.layersTreeNodeMap = [];
+        data.treeOwner = null;
+    };
+
     var methods = {
         init: function (options) {
             options = $.extend({
@@ -472,55 +546,48 @@
             });
         },
 
-        updateLayer: function (layerOrItem) {
-            // Gather a tree node for the item
-            var treeNodeId = getLayerTreeNodeId.call(this, layerOrItem);
-
-            if (treeNodeId) {
-                $(this).data('glayerpanel').vtree.requestInvalidation();
-            }
-        },
-
-        insertLayer: function (layerOrItem) {
-            insertLayer.call(this, layerOrItem);
-        },
-
-        removeLayer: function (layerOrItem) {
-            // Gather a tree node for the item
-            var treeNodeId = getLayerTreeNodeId.call(this, layerOrItem);
-
-            if (treeNodeId) {
-                vtreeRemoveNode.call(this, treeNodeId);
-                removeNodeFromMap.call(this, layerOrItem);
-            }
-        },
-
-        clean: function () {
-            var data = $(this).data('glayerpanel');
-            data.vtree.clean();
-            data.layersTreeNodeMap = [];
-            data.treeOwner = null;
-        },
-
         refresh: function () {
             $(this).data('glayerpanel').vtree.refresh();
         },
 
         treeOwner: function (treeOwner) {
             var $this = $(this);
+            var data = $this.data('glayerpanel');
             if (!arguments.length) {
-                return $this.data('glayerpanel').treeOwner;
-            } else {
-                methods.clean.call(this);
-                $this.data('glayerpanel').treeOwner = treeOwner;
-                for (var child = treeOwner.getFirstChild(); child !== null; child = child.getNext()) {
-                    if (child instanceof GLayer || child instanceof GItem) {
-                        methods.insertLayer.call(this, child);
+                return data.treeOwner;
+            } else if (treeOwner !== data.treeOwner) {
+                if (data.treeOwner && data.treeOwner.hasMixin(GEventTarget)) {
+                    data.treeOwner.removeEventListener(GNode.AfterInsertEvent, data.afterNodeInsertHandler, this);
+                    data.treeOwner.removeEventListener(GNode.BeforeRemoveEvent, data.beforeNodeRemoveHandler, this);
+                    data.treeOwner.removeEventListener(GNode.AfterPropertiesChangeEvent, data.afterPropertiesChangeHandler, this);
+                    data.treeOwner.removeEventListener(GNode.AfterFlagChangeEvent, data.afterFlagChangeHandler, this);
+                }
+                clean.call(this);
+                data.treeOwner = treeOwner;
+                if (data.treeOwner) {
+                    if (data.treeOwner.hasMixin(GEventTarget)) {
+                        data.afterNodeInsertHandler = afterNodeInsert.bind(this);
+                        data.beforeNodeRemoveHandler = beforeNodeRemove.bind(this);
+                        data.afterPropertiesChangeHandler = afterPropertiesChange.bind(this);
+                        data.afterFlagChangeHandler = afterFlagChange.bind(this);
+
+                        data.treeOwner.addEventListener(GNode.AfterInsertEvent, data.afterNodeInsertHandler, this);
+                        data.treeOwner.addEventListener(GNode.BeforeRemoveEvent, data.beforeNodeRemoveHandler, this);
+                        data.treeOwner.addEventListener(GNode.AfterPropertiesChangeEvent, data.afterPropertiesChangeHandler, this);
+                        data.treeOwner.addEventListener(GNode.AfterFlagChangeEvent, data.afterFlagChangeHandler, this);
+                    }
+                    for (var child = data.treeOwner.getFirstChild(); child !== null; child = child.getNext()) {
+                        if (child instanceof GLayer || child instanceof GItem) {
+                            insertLayer.call(this, child);
+                        }
                     }
                 }
-
-                return this;
             }
+            return this;
+        },
+
+        blockHandlers: function (blockHandlers) {
+            $(this).data('glayerpanel').blockHandlers = !!blockHandlers;
         }
     };
 
