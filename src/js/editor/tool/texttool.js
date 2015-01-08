@@ -90,8 +90,8 @@
     GTextTool.prototype._insertShape = function (shape) {
         // Create our text out of our rectangle here
         var text = new GText();
-        text.setProperties(['aw', 'ah', 'trf'], [false, false, shape.getProperty('trf')]);
-        text.useTextBoxAsBase();
+        text.setProperties(['aw', 'ah'], [false, false]);
+        text.transformSourceBBox(shape.getProperty('trf'));
         this._insertText(text);
     };
 

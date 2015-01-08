@@ -606,6 +606,11 @@
         return this._sizeBox ? this._sizeBox : null;
     };
 
+    /** @override */
+    GText.prototype._calculateSourceBBox = function () {
+        return new GRect.fromPoints(this._tl, this._tr, this._br, this._bl);
+    };
+
     /**
      * Converts the underlying content to a html string
      * @param {Boolean} segments if true, each single character
@@ -698,9 +703,10 @@
                 bl = this.$trf.mapPoint(bl);
                 br = this.$trf.mapPoint(br);
             }
-            this._textBox = new GRect.fromPoints(tl, tr, br, bl);// this.$ah ? this._textBox : new GRect.fromPoints(tl, tr, br, bl);
+            //this._textBox = new GRect.fromPoints(tl, tr, br, bl);// this.$ah ? this._textBox : new GRect.fromPoints(tl, tr, br, bl);
+            this._textBox = this.getSourceBBox();
             var textBoxOrig = this._textBox;
-            if (this.$ttrf) {
+            /*if (this.$ttrf) {
                 var ittrf = this.$ttrf.inverted();
                 tl = ittrf.mapPoint(tl);
                 tr = ittrf.mapPoint(tr);
@@ -738,7 +744,7 @@
                 } else {
                     textBoxOrig = null;
                 }
-            }
+            }  */
 
             if (textBoxOrig) {
                 // Create our temporary container for holding our html contents
@@ -807,9 +813,9 @@
                     this._sizeBox = new GRect(sizeBox.getX() + textBoxOrig.getX(), sizeBox.getY() + textBoxOrig.getY(),
                         sizeBox.getWidth(), sizeBox.getHeight());
 
-                    if (this.$ttrf) {
+                   /* if (this.$ttrf) {
                         this._sizeBox = this.$ttrf.mapRect(this._sizeBox);
-                    }
+                    }*/
                     // Calculate vertical shift depending on vertical alignment
                     if (this._sizeBox && this._sizeBox.getHeight() < this._textBox.getHeight()) {
                         switch (this.$va) {
@@ -854,7 +860,7 @@
                     var h = this.$ah || this._sizeBox.getHeight() > this._textBox.getHeight() ?
                         this._sizeBox.getHeight() : this._textBox.getHeight();
 
-                    this._textBox = new GRect(lx, ty, w, h);
+                    //this._textBox = new GRect(lx, ty, w, h);
                 }
             }
         }
@@ -888,10 +894,10 @@
             }
             this._runItOutline = ifFont.getGlyphOutline(run.family, run.variant, run.size, run.x, run.y, run.char);
             var transform = this.$ttrf && !this.$ttrf.isIdentity() ? this.$ttrf : null;
-            if (this._verticalShift) {
+            /*if (this._verticalShift) {
                 var vtrans = new GTransform(1, 0, 0, 1, 0, this._verticalShift);
                 transform = transform ? transform.multiplied(vtrans) : vtrans;
-            }
+            }*/
             if (transform) {
                 this._runItOutline = new GVertexTransformer(this._runItOutline, transform);
             }
@@ -903,43 +909,12 @@
     };
 
     /**
-     * Intended to be called for text box resize transformations
-     * @param {GTransform} transform
+     * Remember the current text box as a starting box for all the text transformations
      */
-    GText.prototype.textBoxTransform = function (transform) {
-        if (transform && !transform.isIdentity()) {
-            var trf = transform;
-            var oldVisualTextBox = this._textBox;
-            var newVisualTextBox = transform.mapRect(oldVisualTextBox);
-            var tl = this._tl;
-            var tr = this._tr;
-            var bl = this._bl;
-            var br = this._br;
-            if (this.$trf) {
-                tl = this.$trf.mapPoint(tl);
-                tr = this.$trf.mapPoint(tr);
-                bl = this.$trf.mapPoint(bl);
-                br = this.$trf.mapPoint(br);
-            }
-            var textBox = new GRect.fromPoints(tl, tr, br, bl);
-            trf = new GTransform()
-                .translated(-textBox.getX(), -textBox.getY())
-                .scaled(newVisualTextBox.getWidth() / textBox.getWidth(),
-                newVisualTextBox.getHeight() / textBox.getHeight())
-                .translated(newVisualTextBox.getX(), newVisualTextBox.getY());
-
-            this.setProperties(['ah', 'aw', 'trf'],
-                [false, false, this.$trf ? this.$trf.multiplied(trf) : trf]);
-        }
-    };
-
-    /**
-     * Remember the current text box as a starting box for all the text transformations,
-     * and set the 'trf' property to null
-     */
-    GText.prototype.useTextBoxAsBase = function () {
+    GText.prototype.transformSourceBBox = function (resizeTrf) {
+        this._notifyChange(GElement._Change.PrepareGeometryUpdate);
         var textBox = null;
-        if (this._textBox && !this._runsDirty) {
+        if (this._textBox && !this._runsDirty && !resizeTrf) {
             textBox = this._textBox;
         } else {
             // this._tl, this._tr, this._bl, and this._br may be not the corners of the correct rectangle,
@@ -948,19 +923,20 @@
             var tr = this._tr;
             var bl = this._bl;
             var br = this._br;
-            if (this.$trf) {
-                tl = this.$trf.mapPoint(tl);
-                tr = this.$trf.mapPoint(tr);
-                bl = this.$trf.mapPoint(bl);
-                br = this.$trf.mapPoint(br);
+            if (resizeTrf) {
+                tl = resizeTrf.mapPoint(tl);
+                tr = resizeTrf.mapPoint(tr);
+                bl = resizeTrf.mapPoint(bl);
+                br = resizeTrf.mapPoint(br);
             }
             textBox = new GRect.fromPoints(tl, tr, br, bl);
+            this._textBox = textBox;
         }
         this._tl = textBox.getSide(GRect.Side.TOP_LEFT);
         this._tr = textBox.getSide(GRect.Side.TOP_RIGHT);
         this._br = textBox.getSide(GRect.Side.BOTTOM_RIGHT);
         this._bl = textBox.getSide(GRect.Side.BOTTOM_LEFT);
-        this.setProperty('trf', null);
+        this._notifyChange(GElement._Change.FinishGeometryUpdate);
     };
 
     /** @override */
@@ -970,6 +946,9 @@
         var bbox = this._textBox;
         if (this._sizeBox) {
             bbox = bbox.united(this._sizeBox);
+        }
+        if (this.$trf) {
+            bbox = this.$trf.mapRect(bbox);
         }
         return bbox;
     };
@@ -1093,6 +1072,10 @@
             if (transformIdx >= 0) {
                 this._runsDirty = true;
             }
+        }
+
+        if (change === GElement._Change.PrepareGeometryUpdate) {
+            this._runsDirty = true;
         }
     };
 

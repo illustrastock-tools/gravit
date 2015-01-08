@@ -215,7 +215,12 @@
             shx = this._shx, shy = this._shy,
             tx = this._tx, ty = this._ty;
 
-        var d = 1.0 / (sx * sy - shy * shx);
+        var d1 = (sx * sy - shy * shx);
+        if (!d1) {
+            return null;
+        }
+
+        var d = 1.0 / d1;
 
         var t0 = sy * d;
         sy = sx * d;

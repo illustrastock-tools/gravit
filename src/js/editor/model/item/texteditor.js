@@ -24,6 +24,13 @@
     GTextEditor.prototype._inlineEditor = null;
 
     /**
+     * Visual box to be displayed while inline editing
+     * @type {GRect}
+     * @private
+     */
+    GTextEditor.prototype._inlineEditBBox = null;
+
+    /**
      * Get a property value
      * @param {String} property the property to get a value for
      * @param {Boolean} [computed] whether to use computed value (defaults to false)
@@ -180,6 +187,57 @@
     };
 
     /** @override */
+    GTextEditor.prototype.createElementPreview = function () {
+        if (!this._elementPreview) {
+            var imageSourceBBox = this._element.getSourceBBox();
+            // Create a rectangle instead of a text for the preview
+            this._elementPreview = new GRectangle(imageSourceBBox.getX(), imageSourceBBox.getY(), imageSourceBBox.getWidth(), imageSourceBBox.getHeight());
+            this._elementPreview.transferProperties(this._element, [GShape.GeometryProperties]);
+        }
+    };
+
+    /** @override */
+    GTextEditor.prototype.canApplyTransform = function () {
+        return this._elementPreview || GShapeEditor.prototype.canApplyTransform.call(this);
+    };
+
+    /** @override */
+    GTextEditor.prototype.applyTransform = function (element) {
+        if (element && this._elementPreview) {
+            element.transferProperties(this._elementPreview, [GShape.GeometryProperties]);
+            this.resetTransform();
+        } else {
+            GShapeEditor.prototype.applyTransform.call(this, element);
+        }
+    };
+
+    /** @override */
+    GTextEditor.prototype.applyPartMove = function (partId, partData) {
+        if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
+            if (!this.canApplyTransform()) {
+                // Reset editor transformation
+                this.resetTransform();
+            } else {
+                if (this._element && this._elementPreview) {
+                    var resizeTrf = this._elementPreview.getProperty('trf');
+                    var trf = this._element.getProperty('trf');
+                    if (resizeTrf && trf) {
+                        var itrf = trf.inverted();
+                        if (itrf) {
+                            resizeTrf = resizeTrf.multiplied(itrf);
+                        }
+                    }
+                    this._element.transformSourceBBox(resizeTrf);
+                    this.resetTransform();
+                } else {
+                    GShapeEditor.prototype.applyTransform.call(this, this._element);
+                }
+            }
+        }
+        GElementEditor.prototype.applyPartMove.call(this, partId, partData);
+    };
+
+    /** @override */
     GTextEditor.prototype.canInlineEdit = function () {
         return true;
     };
@@ -191,10 +249,11 @@
 
     /** @override */
     GTextEditor.prototype.beginInlineEdit = function (view, container) {
+        this._inlineEditBBox = this._getInlineEditBBox();
+
         // Remove size handles and hide our text element
         this.removeFlag(GBlockEditor.Flag.ResizeAll);
         this.getElement().setFlag(GElement.Flag.NoPaint);
-
         var html = this.getElement().asHtml();
 
         this._inlineEditor = $($('<div></div>'))
@@ -279,15 +338,7 @@
 
     /** @override */
     GTextEditor.prototype.adjustInlineEditForView = function (view, position) {
-        var sceneBBox = this.getElement().getGeometryBBox();
-        if (!sceneBBox) {
-            sceneBBox = GRect.fromPoints(new GPoint(0, 0), new GPoint(1, 1));
-            var transform = this.getElement().getTransform();
-            if (transform) {
-                sceneBBox = transform.mapRect(sceneBBox);
-            }
-        }
-
+        var sceneBBox = this._getInlineEditBBox();
         var viewBBox = view.getWorldTransform().mapRect(sceneBBox);
         var left = viewBBox.getX();
         var top = Math.floor(viewBBox.getY()) + 1;
@@ -382,6 +433,7 @@
         this._inlineEditor.remove();
         this._inlineEditor = null;
 
+        this._inlineEditBBox = null;
         // Show size handles and our text element
         this.setFlag(GBlockEditor.Flag.ResizeAll);
         this.getElement().removeFlag(GElement.Flag.NoPaint);
@@ -390,21 +442,40 @@
         return 'Modify Text Content';
     };
 
-    /** @override */
-    GTextEditor.prototype.applyPartMove = function (partId, partData) {
-        if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
-            if (!this._transform.isIdentity()) {
-                // By default we'll simply transfer the transformation to the element
-                this._element.textBoxTransform(this._transform);
-            }
-            this.resetTransform();
+    GTextEditor.prototype._getInlineEditBBox = function () {
+        if (!this._inlineEditBBox) {
+            var sourceBBox = this.getElement().getSourceBBox();
+            var geomBBox = this.getElement().getGeometryBBox();
+            this._inlineEditBBox = new GRect(geomBBox.getX(), geomBBox.getY(), sourceBBox.getWidth(), sourceBBox.getHeight());
         }
-        GElementEditor.prototype.applyPartMove.call(this, partId, partData);
+        return this._inlineEditBBox;
     };
 
     /** @override */
     GTextEditor.prototype._paintOutline = function (transform, context, paintBBox, color) {
-        GBlockEditor.prototype._paintOutline.call(this, transform, context, true, color);
+        if (this._inlineEditBBox) {
+            var vertices = null;
+            var transformedQuadrilateral = transform.mapQuadrilateral(this._inlineEditBBox);
+
+            if (transformedQuadrilateral && transformedQuadrilateral.length) {
+                vertices = transformedQuadrilateral.map(function (point) {
+                    return new GPoint(Math.floor(point.getX()) + 0.5, Math.floor(point.getY()) + 0.5)
+                });
+             }
+
+            if (vertices) {
+                context.canvas.putVertices(vertices, true /* make Closed */);
+
+                // Paint either outlined or highlighted (highlighted has a higher precedence)
+                context.canvas.strokeVertices(
+                    color ? color :
+                        (this.hasFlag(GElementEditor.Flag.Highlighted) ? context.highlightOutlineColor :
+                            context.selectionOutlineColor),
+                    1);
+            }
+        } else {
+            GBlockEditor.prototype._paintOutline.call(this, transform, context, true, color);
+        }
     };
 
     /** @private */
