@@ -693,58 +693,8 @@
             this._runs = [];
 
             // Calculate our actual text box and line length
-            var tl = this._tl;
-            var tr = this._tr;
-            var bl = this._bl;
-            var br = this._br;
-            if (this.$trf) {
-                tl = this.$trf.mapPoint(tl);
-                tr = this.$trf.mapPoint(tr);
-                bl = this.$trf.mapPoint(bl);
-                br = this.$trf.mapPoint(br);
-            }
-            //this._textBox = new GRect.fromPoints(tl, tr, br, bl);// this.$ah ? this._textBox : new GRect.fromPoints(tl, tr, br, bl);
             this._textBox = this.getSourceBBox();
             var textBoxOrig = this._textBox;
-            /*if (this.$ttrf) {
-                var ittrf = this.$ttrf.inverted();
-                tl = ittrf.mapPoint(tl);
-                tr = ittrf.mapPoint(tr);
-                bl = ittrf.mapPoint(bl);
-                br = ittrf.mapPoint(br);
-                var maxlx = null;
-                var minrx = null;
-                var maxty = null;
-                var minby = null;
-                if (tl.getX() < br.getX() && tl.getX() < tr.getX() &&
-                    bl.getX() < br.getX() && bl.getX() < tr.getX()) {
-
-                    maxlx = tl.getX() >= bl.getX() ? tl.getX() : bl.getX();
-                    minrx = br.getX() <= tr.getX() ? br.getX() : tr.getX();
-                } else if (tl.getX() > br.getX() && tl.getX() > tr.getX() &&
-                    bl.getX() > br.getX() && bl.getX() > tr.getX()) {
-
-                    minrx = tl.getX() <= bl.getX() ? tl.getX() : bl.getX();
-                    maxlx = br.getX() >= tr.getX() ? br.getX() : tr.getX();
-                }
-                if (tl.getY() < bl.getY() && tl.getY() < br.getY() &&
-                    tr.getY() < bl.getY() && tr.getY() < br.getY()) {
-
-                    maxty = tl.getY() >= tr.getY() ? tl.getY() : tr.getY();
-                    minby = bl.getY() <= br.getY() ? bl.getY() : br.getY();
-                } else if (tl.getY() > bl.getY() && tl.getY() > br.getY() &&
-                    tr.getY() > bl.getY() && tr.getY() > br.getY()) {
-
-                    minby = tl.getY() <= tr.getY() ? tl.getY() : tr.getY();
-                    maxty = bl.getY() >= br.getY() ? bl.getY() : br.getY();
-                }
-
-                if (maxlx !== null && minrx !== null && maxty !== null && minby !== null) {
-                    textBoxOrig = new GRect.fromPoints(new GPoint(maxlx, maxty), new GPoint(minrx, minby));
-                } else {
-                    textBoxOrig = null;
-                }
-            }  */
 
             if (textBoxOrig) {
                 // Create our temporary container for holding our html contents
@@ -813,9 +763,6 @@
                     this._sizeBox = new GRect(sizeBox.getX() + textBoxOrig.getX(), sizeBox.getY() + textBoxOrig.getY(),
                         sizeBox.getWidth(), sizeBox.getHeight());
 
-                   /* if (this.$ttrf) {
-                        this._sizeBox = this.$ttrf.mapRect(this._sizeBox);
-                    }*/
                     // Calculate vertical shift depending on vertical alignment
                     if (this._sizeBox && this._sizeBox.getHeight() < this._textBox.getHeight()) {
                         switch (this.$va) {
@@ -860,7 +807,7 @@
                     var h = this.$ah || this._sizeBox.getHeight() > this._textBox.getHeight() ?
                         this._sizeBox.getHeight() : this._textBox.getHeight();
 
-                    //this._textBox = new GRect(lx, ty, w, h);
+                    this._textBox = new GRect(lx, ty, w, h);
                 }
             }
         }
@@ -894,10 +841,10 @@
             }
             this._runItOutline = ifFont.getGlyphOutline(run.family, run.variant, run.size, run.x, run.y, run.char);
             var transform = this.$ttrf && !this.$ttrf.isIdentity() ? this.$ttrf : null;
-            /*if (this._verticalShift) {
+            if (this._verticalShift) {
                 var vtrans = new GTransform(1, 0, 0, 1, 0, this._verticalShift);
-                transform = transform ? transform.multiplied(vtrans) : vtrans;
-            }*/
+                transform = transform ? vtrans.multiplied(transform) : vtrans;
+            }
             if (transform) {
                 this._runItOutline = new GVertexTransformer(this._runItOutline, transform);
             }
