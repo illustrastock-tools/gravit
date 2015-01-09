@@ -227,7 +227,20 @@
                             resizeTrf = resizeTrf.multiplied(itrf);
                         }
                     }
+
+                    this._element.beginUpdate();
                     this._element.transformSourceBBox(resizeTrf);
+                    if (partData.side !== GRect.Side.RIGHT_CENTER && partData.side !== GRect.Side.LEFT_CENTER &&
+                        this._element.getProperty('ah')) {
+
+                        this._element.setProperty('ah', false);
+                    }
+                    if (partData.side !== GRect.Side.TOP_CENTER && partData.side !== GRect.Side.BOTTOM_CENTER &&
+                        this._element.getProperty('aw')) {
+
+                        this._element.setProperty('aw', false);
+                    }
+                    this._element.endUpdate();
                     this.resetTransform();
                 } else {
                     GShapeEditor.prototype.applyTransform.call(this, this._element);

@@ -608,7 +608,7 @@
 
     /** @override */
     GText.prototype._calculateSourceBBox = function () {
-        return new GRect.fromPoints(this._tl, this._tr, this._br, this._bl);
+        return this._textBox && !this._runsDirty ? this._textBox : new GRect.fromPoints(this._tl, this._tr, this._br, this._bl);
     };
 
     /**
@@ -693,7 +693,7 @@
             this._runs = [];
 
             // Calculate our actual text box and line length
-            this._textBox = this.getSourceBBox();
+            this._textBox = new GRect.fromPoints(this._tl, this._tr, this._br, this._bl);
             var textBoxOrig = this._textBox;
 
             if (textBoxOrig) {
@@ -808,6 +808,10 @@
                         this._sizeBox.getHeight() : this._textBox.getHeight();
 
                     this._textBox = new GRect(lx, ty, w, h);
+                    this._tl = this._textBox.getSide(GRect.Side.TOP_LEFT);
+                    this._tr = this._textBox.getSide(GRect.Side.TOP_RIGHT);
+                    this._br = this._textBox.getSide(GRect.Side.BOTTOM_RIGHT);
+                    this._bl = this._textBox.getSide(GRect.Side.BOTTOM_LEFT);
                 }
             }
         }
@@ -859,31 +863,16 @@
      * Remember the current text box as a starting box for all the text transformations
      */
     GText.prototype.transformSourceBBox = function (resizeTrf) {
-        this._notifyChange(GElement._Change.PrepareGeometryUpdate);
-        var textBox = null;
-        if (this._textBox && !this._runsDirty && !resizeTrf) {
-            textBox = this._textBox;
-        } else {
-            // this._tl, this._tr, this._bl, and this._br may be not the corners of the correct rectangle,
-            // so it is important always to map them individually, and only after that to construct a new rectangle
-            var tl = this._tl;
-            var tr = this._tr;
-            var bl = this._bl;
-            var br = this._br;
-            if (resizeTrf) {
-                tl = resizeTrf.mapPoint(tl);
-                tr = resizeTrf.mapPoint(tr);
-                bl = resizeTrf.mapPoint(bl);
-                br = resizeTrf.mapPoint(br);
-            }
-            textBox = new GRect.fromPoints(tl, tr, br, bl);
-            this._textBox = textBox;
+        if (resizeTrf) {
+            this._notifyChange(GElement._Change.PrepareGeometryUpdate);
+            this._tl = resizeTrf.mapPoint(this._tl);
+            this._tr = resizeTrf.mapPoint(this._tr);
+            this._br = resizeTrf.mapPoint(this._br);
+            this._bl = resizeTrf.mapPoint(this._bl);
+            this._textBox = new GRect.fromPoints(this._tl, this._tr, this._br, this._bl);
+            this._runsDirty = true;
+            this._notifyChange(GElement._Change.FinishGeometryUpdate);
         }
-        this._tl = textBox.getSide(GRect.Side.TOP_LEFT);
-        this._tr = textBox.getSide(GRect.Side.TOP_RIGHT);
-        this._br = textBox.getSide(GRect.Side.BOTTOM_RIGHT);
-        this._bl = textBox.getSide(GRect.Side.BOTTOM_LEFT);
-        this._notifyChange(GElement._Change.FinishGeometryUpdate);
     };
 
     /** @override */
@@ -989,41 +978,13 @@
             }
         }
 
-        GShape.prototype._handleChange.call(this, change, args);
-
-        if ((this._handleGeometryChangeForProperties(change, args, GText.GeometryProperties) ||
-            this._handleGeometryChangeForProperties(change, args, GStylable.AllGeometryProperties)) &&
-            change == GNode._Change.BeforePropertiesChange) {
-
-            var ahIdx = args.properties.indexOf('ah');
-            if (ahIdx >= 0 && args.values[ahIdx] === true && !this.$ah && this._textBox && !this._runsDirty) {
-                // As 'ah' changes to true, we need to substitute our original text box such a way,
-                // that after the transformation it will be identical to our current visual text box.
-                this._tl = this._textBox.getSide(GRect.Side.TOP_LEFT);
-                this._tr = this._textBox.getSide(GRect.Side.TOP_RIGHT);
-                this._br = this._textBox.getSide(GRect.Side.BOTTOM_RIGHT);
-                this._bl = this._textBox.getSide(GRect.Side.BOTTOM_LEFT);
-                if (this.$trf) {
-                    var itrf = this.$trf.inverted();
-                    this._tl = itrf.mapPoint(this._tl);
-                    this._tr = itrf.mapPoint(this._tr);
-                    this._bl = itrf.mapPoint(this._bl);
-                    this._br = itrf.mapPoint(this._br);
-                }
-            }
-            this._runsDirty = true;
-        }
-
-        if (change === GNode._Change.BeforePropertiesChange) {
-            var transformIdx = args.properties.indexOf('trf');
-            if (transformIdx >= 0) {
-                this._runsDirty = true;
-            }
-        }
-
+        this._handleGeometryChangeForProperties(change, args, GText.GeometryProperties);
+        this._handleGeometryChangeForProperties(change, args, GStylable.AllGeometryProperties);
         if (change === GElement._Change.PrepareGeometryUpdate) {
             this._runsDirty = true;
         }
+
+        GShape.prototype._handleChange.call(this, change, args);
     };
 
     /**
