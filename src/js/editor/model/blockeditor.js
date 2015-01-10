@@ -118,9 +118,7 @@
 
             // Paint resize handles if desired
             if (this._showResizeHandles()) {
-                this._iterateResizeHandles(function (point, side) {
-                    this._paintAnnotation(context, transform, point, GElementEditor.Annotation.Rectangle, false, true);
-                }.bind(this), transform);
+                this._paintHandles(transform, context);
             }
 
             // Let descendant classes do some post-painting
@@ -149,6 +147,18 @@
         }
 
         return null;
+    };
+
+    /**
+     * Used to paint resize handles
+     * @param {GTransform} transform the current transformation in use
+     * @param {GPaintContext} context the paint context to paint on
+     * @private
+     */
+    GBlockEditor.prototype._paintHandles = function (transform, context) {
+        this._iterateResizeHandles(function (point, side) {
+            this._paintAnnotation(context, transform, point, GElementEditor.Annotation.Rectangle, false, true);
+        }.bind(this), transform);
     };
 
     /**

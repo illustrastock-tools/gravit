@@ -517,6 +517,17 @@
                 }
             }
 
+            // Special handling for double click in text editor
+            if (!this._elementUnderMouse && this._editorUnderMouseInfo &&
+                (this._editorUnderMouseInfo.editor instanceof GTextEditor) &&
+                this._editorUnderMouseInfo.editor.hasFlag(GElementEditor.Flag.Selected)) {
+
+                this._editorUnderMouseInfo.editor.handlePartDblClick(
+                    this._editorUnderMouseInfo.id, this._editorUnderMouseInfo.data);
+
+                openTransformBox = false;
+            }
+
             if (openTransformBox) {
                 this._openTransformBox();
             }

@@ -455,6 +455,34 @@
         return 'Modify Text Content';
     };
 
+    /**
+     * Special handler for mouse double click on text box part Ids
+     * @param {*} [partId] id of the clicked part
+     * @param {{*}} [partData] dictionary of clicked part data
+     */
+    GTextEditor.prototype.handlePartDblClick = function (partId, partData) {
+        if (partId === GBlockEditor.RESIZE_HANDLE_PART_ID) {
+            if (partData.side === GRect.Side.RIGHT_CENTER) {
+                this._element.setProperty('aw', !this._element.getProperty('aw'));
+            } else if (partData.side === GRect.Side.BOTTOM_CENTER) {
+                this._element.setProperty('ah', !this._element.getProperty('ah'));
+            }
+        }
+    };
+
+    /** @override */
+    GTextEditor.prototype._paintHandles = function (transform, context) {
+        this._iterateResizeHandles(function (point, side) {
+            var handleSelected = false;
+            if (side === GRect.Side.RIGHT_CENTER && this._element.getProperty('aw') ||
+                side === GRect.Side.BOTTOM_CENTER && this._element.getProperty('ah')) {
+
+                handleSelected = true;
+            }
+            this._paintAnnotation(context, transform, point, GElementEditor.Annotation.Rectangle, handleSelected, true);
+        }.bind(this), transform);
+    };
+
     GTextEditor.prototype._getInlineEditBBox = function () {
         if (!this._inlineEditBBox) {
             var sourceBBox = this.getElement().getSourceBBox();
