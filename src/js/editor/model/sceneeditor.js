@@ -377,8 +377,8 @@
     };
 
     GSceneEditor.prototype._geometryChange = function (evt) {
-        if (this._transformBox && evt.type == GElement.GeometryChangeEvent.Type.After &&
-                evt.element.hasFlag(GNode.Flag.Selected)) {
+        if (this._transformBox && evt.element.hasFlag(GNode.Flag.Selected) &&
+            (evt.type == GElement.GeometryChangeEvent.Type.After || evt.type == GElement.GeometryChangeEvent.Type.Child)) {
 
             if (this._transformBox.trf || this._transformBox.cTrf) {
                 this._transformBox.applyCenterTransform();
