@@ -148,19 +148,57 @@
                                     }
 
                                     break;
+                                } else if (parent.nodeType === 1 && parent.nodeName.toLowerCase() === 'span') {
+                                    if ((parent.childNodes.length - parent.children.length) == 1) {
+                                        for (var prop in blockCSS) {
+                                            parent.style[prop] = blockCSS[prop];
+                                        }
+                                    } else {
+                                        var parParent = parent.parentNode;
+                                        if (parParent) {
+                                            var el = null;
+                                            for (var i = parent.childNodes.length; i > 0; --i) {
+                                                var child = parent.childNodes[i - 1];
+                                                if (child.nodeType === 3) {
+                                                    if (child !== node) {
+                                                        if (!el) {
+                                                            el = document.createElement('span');
+                                                        }
+                                                        $(el).prepend(child);
+                                                        if (i === 1) {
+                                                            parParent.insertBefore(el, parent.nextSibling);
+                                                            el = null;
+                                                        }
+                                                    } else { //if (child === node) {
+                                                        if (el) {
+                                                            parParent.insertBefore(el, parent.nextSibling);
+                                                        }
+                                                        el = document.createElement('span');
+                                                        $(el).prepend(child);
+                                                        for (var prop in blockCSS) {
+                                                            el.style[prop] = blockCSS[prop];
+                                                        }
+                                                        parParent.insertBefore(el, parent.nextSibling);
+                                                        el = null;
+                                                    }
+                                                } else {
+                                                    if (el) {
+                                                        parParent.insertBefore(el, parent.nextSibling);
+                                                        el = null;
+                                                    }
+                                                    parParent.insertBefore(child, parent.nextSibling);
+                                                }
+                                            }
+                                            var newParent = parent.nextSibling;
+                                            parParent.removeChild(parent);
+                                            parent = newParent;
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-
-                // Create / Remove block style if selection is not collapsed
-                if (!sel.isCollapsed) {
-                    // TODO !!!!
-                }
-
-                //var cssApplier = rangy.createCssClassApplier("dummy", {normalize: true}, ['span', 'p']);
-                //cssApplier.toggleSelection();
 
                 // Trigger selection changed event to update everything
                 this._triggerSelectionChanged();
@@ -331,7 +369,6 @@
                 }
                 this._savedSelection = rangy.saveSelection();
             }.bind(this))
-            //.html('<style type="text/css">.dummy{font-size: 30px}</style>' + html)
             .html(html)
             .appendTo(container);
 
@@ -339,11 +376,13 @@
 
         if (html === "") {
             var pTag = document.createElement('p');
-            $(pTag).text('Your Text Here');
+            var sTag = document.createElement('span');
+            $(sTag).text('Your Text Here');
+            $(pTag).append(sTag);
             this._inlineEditor.append(pTag);
 
             var range = rangy.createRange();
-            range.selectNodeContents(pTag);
+            range.selectNodeContents(sTag);
             var sel = rangy.getSelection();
             sel.setSingleRange(range);
         }
