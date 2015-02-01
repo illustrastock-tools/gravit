@@ -786,16 +786,19 @@
                     var fontVariant = ifFont.getVariant(fontFamily, fontStyle, fontWeight);
                     var baseline = ifFont.getGlyphBaseline(fontFamily, fontVariant, fontSize);
 
+                    var charColor = GText.Block.cssToProperty('_fpt', css);
+
                     if (char !== ' ') {
-                        // Let colorChunk contain only the one char until further clarifications how this
-                        // should work with gradient fill
-                        //if (!colorChunk) {
+                        // TODO: clarify how this should work with gradient fill
+                        if (!colorChunk ||
+                            this._runs.length && this._runs[this._runs.length - 1].clr !== charColor) {
+
                             colorChunk = [];
                             this._runs.push({
                                 chars: colorChunk,
-                                clr: GText.Block.cssToProperty('_fpt', css)
+                                clr: charColor
                             });
-                        //}
+                        }
 
                         colorChunk.push({
                             x: textBoxOrig.getX() + rect.left,
