@@ -98,7 +98,9 @@
             if (GText.GeometryProperties.hasOwnProperty(properties[i])) {
                 textProperties.push(properties[i]);
                 textValues.push(values[i]);
-            } else if (GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties.hasOwnProperty(properties[i])) {
+            } else if (GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties.hasOwnProperty(properties[i]) ||
+                properties[i] === '_fpt') {
+
                 blockProperties.push(properties[i]);
                 blockValues.push(values[i]);
             } else {

@@ -150,7 +150,7 @@
                         break;
                 }
             }
-        } else if (property === 'fc') {
+        } else if (property === '_fpt') {
             css['color'] = value !== null ? value.toScreenCSS() : '';
         } else if (property === '_tcs') {
             css['letter-spacing'] = value !== null ? value + 'px' : '';
@@ -203,10 +203,13 @@
             } else if (css['font-style'] === 'italic') {
                 return GFont.Style.Italic;
             }
-        } else if (property === 'fc') {
-            var value = GRGBColor.fromCSSColor(css['color']);
-            if (value) {
-                return value;
+        } else if (property === '_fpt') {
+            var cssStringColor = css['color'];
+            if (cssStringColor) {
+                var value = GRGBColor.fromCSSColor(cssStringColor);
+                if (value) {
+                    return value;
+                }
             }
         } else if (property === '_tcs') {
             var value = parseFloat(css['letter-spacing']);
@@ -272,14 +275,22 @@
      * @returns {{}}
      */
     GText.Block.prototype.propertiesToCss = function (css) {
-        return this._propertiesToCss(css, GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties, GText.Block.propertyToCss);
+        return this._propertiesToCss(css,
+            $.extend({},
+                GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties,
+                {'_fpt': null}), // TODO: Add all Fill and Border visualProperties later if needed
+            GText.Block.propertyToCss);
     };
 
     /**
      * @param {{}} css
      */
     GText.Block.prototype.cssToProperties = function (css) {
-        this._cssToProperties(css, GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties, GText.Block.cssToProperty);
+        this._cssToProperties(css,
+            $.extend({},
+                GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties,
+                {'_fpt': null}), // TODO: Add all Fill and Border visualProperties later if needed
+            GText.Block.cssToProperty);
     };
 
     GText.Block.prototype._propertiesToCss = function (css, propertyMap, propertyConverter) {
@@ -518,6 +529,32 @@
     };
 
     // -----------------------------------------------------------------------------------------------------------------
+    // GText.ColorChunkReader Class
+    // Proxy class for GText readVertex modification to provide limited reading of only the near chars
+    // of the same color pattern
+    // -----------------------------------------------------------------------------------------------------------------
+
+    GText.ColorChunkReader = function (textOwner) {
+        this._textOwner = textOwner;
+    };
+
+    GObject.inherit(GText.ColorChunkReader, GVertexSource);
+
+    /**
+     * @type {GText}
+     * @private
+     */
+    GText.ColorChunkReader.prototype._textOwner = null;
+
+    GText.ColorChunkReader.prototype.readVertex = function (vertex) {
+        return this._textOwner.readClrVertex(vertex);
+    };
+
+    GText.ColorChunkReader.prototype.rewindVertices = function (index) {
+        return this._textOwner.rewindClrVertices(index);
+    };
+
+    // -----------------------------------------------------------------------------------------------------------------
     // GText Class
     // -----------------------------------------------------------------------------------------------------------------
     /**
@@ -572,6 +609,12 @@
      * @private
      */
     GText.prototype._runsDirty = false;
+
+    /**
+     * @type {number}
+     * @private
+     */
+    GText.prototype._colorItIndex = null;
 
     /**
      * @type {number}
@@ -689,8 +732,9 @@
 
     /** @override */
     GText.prototype.rewindVertices = function (index) {
-        if (this._runsDirty || this._runs == null) {
+        if (this._runsDirty || this._runs == null || !this._runs.length) {
             this._runs = [];
+            var colorChunk = null;
 
             // Calculate our actual text box and line length
             this._textBox = new GRect.fromPoints(this._tl, this._tr, this._br, this._bl);
@@ -731,7 +775,8 @@
                         'font-family': $span.css('font-family'),
                         'font-size': $span.css('font-size'),
                         'font-style': $span.css('font-style'),
-                        'font-weight': $span.css('font-weight')
+                        'font-weight': $span.css('font-weight'),
+                        'color': $span.css('color')
                     };
 
                     var fontFamily = GText.Block.cssToProperty('_tff', css);
@@ -742,7 +787,17 @@
                     var baseline = ifFont.getGlyphBaseline(fontFamily, fontVariant, fontSize);
 
                     if (char !== ' ') {
-                        this._runs.push({
+                        // Let colorChunk contain only the one char until further clarifications how this
+                        // should work with gradient fill
+                        //if (!colorChunk) {
+                            colorChunk = [];
+                            this._runs.push({
+                                chars: colorChunk,
+                                clr: GText.Block.cssToProperty('_fpt', css)
+                            });
+                        //}
+
+                        colorChunk.push({
                             x: textBoxOrig.getX() + rect.left,
                             y: textBoxOrig.getY() + rect.top + baseline,
                             char: char,
@@ -817,6 +872,7 @@
         }
 
         if (this._runs && this._runs.length > 0) {
+            this._colorItIndex = 0;
             this._runItIndex = 0;
             this._runItOutline = null;
             return true;
@@ -832,31 +888,66 @@
                 return true;
             } else {
                 this._runItOutline = null;
-                if (++this._runItIndex >= this._runs.length) {
+                if (!this._hasRunToRead()) {
                     return false;
                 }
             }
         }
 
         if (!this._runItOutline) {
-            var run = this._runs[this._runItIndex];
+            var run = this._getRun();
             if (!run) {
                 return false;
             }
-            this._runItOutline = ifFont.getGlyphOutline(run.family, run.variant, run.size, run.x, run.y, run.char);
-            var transform = this.$ttrf && !this.$ttrf.isIdentity() ? this.$ttrf : null;
-            if (this._verticalShift) {
-                var vtrans = new GTransform(1, 0, 0, 1, 0, this._verticalShift);
-                transform = transform ? vtrans.multiplied(transform) : vtrans;
-            }
-            if (transform) {
-                this._runItOutline = new GVertexTransformer(this._runItOutline, transform);
-            }
-            if (!this._runItOutline.rewindVertices(0)) {
-                throw new Error('Unexpected end of outline');
-            }
-            return this._runItOutline.readVertex(vertex);
+            return this._runReadVertex(run, vertex);
         }
+    };
+
+    /**
+     * Rewind vertices of chars of the same color chunk
+     * @param {Number} index
+     * @returns {Boolean} true if rewind successful
+     */
+    GText.prototype.rewindClrVertices = function (index) {
+        if (this._runs.length) {
+            var chars = this._runs[this._colorItIndex].chars;
+            if (chars.length && index < chars.length) {
+                this._runItIndex = index;
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Read the next vertex of chars of the same color chunk
+     * @param {GVertex} vertex
+     * @returns {Boolean} true if read is successful
+     */
+    GText.prototype.readClrVertex = function (vertex) {
+        if (this._runItOutline) {
+            if (this._runItOutline.readVertex(vertex)) {
+                return true;
+            } else {
+                this._runItOutline = null;
+                var chars = this._runs[this._colorItIndex].chars;
+                if (this._runItIndex + 1 >= chars.length) {
+                    return false;
+                }
+            }
+        }
+
+        if (!this._runItOutline) {
+            var run = this._getRun();
+            if (!run) {
+                return false;
+            }
+            return this._runReadVertex(run, vertex);
+        }
+
+        return false;
     };
 
     /**
@@ -987,6 +1078,42 @@
         GShape.prototype._handleChange.call(this, change, args);
     };
 
+    /** @override */
+    GText.prototype._paintFill = function (context) {
+        if (!context.configuration.isOutline(context)) {
+            for (this._colorItIndex = 0; this._colorItIndex < this._runs.length; ++this._colorItIndex) {
+                var colorChunk = this._runs[this._colorItIndex];
+
+                var fill;
+                if (colorChunk.clr) {
+                    fill = this._createShapePaint(context, colorChunk.clr, this._getPatternBBox());
+                } else if (this.hasStyleFill()) {
+                    fill = this._createShapePaint(context, this.$_fpt, this._getPatternBBox());
+                }
+                if (fill) {
+                    var canvas = context.canvas;
+                    canvas.putVertices(new GText.ColorChunkReader(this));
+
+                    if (fill.transform) {
+                        if (this.$trf) {
+                            fill.transform = fill.transform.multiplied(this.$trf);
+                        }
+                        // Apply our fill pattern transformation if any
+                        if (this.$_fpx && !this.$_fpx.isIdentity()) {
+                            fill.transform = fill.transform.preMultiplied(this.$_fpx);
+                        }
+
+                        var oldTransform = canvas.setTransform(canvas.getTransform(true).preMultiplied(fill.transform));
+                        canvas.fillVertices(fill.paint, this.$_fop);
+                        canvas.setTransform(oldTransform);
+                    } else {
+                        canvas.fillVertices(fill.paint, this.$_fop, null, this._isEvenOddFill());
+                    }
+                }
+            }
+        }
+    };
+
     /**
      * Returns a clip-box if required, otherwise null
      * @param context
@@ -1086,6 +1213,71 @@
     /** @override */
     GText.prototype._requireMiterLimitApproximation = function () {
         return true;
+    };
+
+    /**
+     * Checks if there remains new run to read vertices from
+     * @returns {Boolean}
+     * @private
+     */
+    GText.prototype._hasRunToRead = function () {
+        if (this._runs.length) {
+            var chars = this._runs[this._colorItIndex].chars;
+
+            if (this._colorItIndex + 1 < this._runs.length ||
+                this._runItIndex < chars.length) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Returns the next run and increases this._runItIndex by 1
+     * @returns {{*}}
+     * @private
+     */
+    GText.prototype._getRun = function () {
+        if (this._runs.length) {
+            var chars = this._runs[this._colorItIndex].chars;
+
+            if (this._colorItIndex + 1 < this._runs.length ||
+                this._runItIndex < chars.length) {
+
+                if (this._runItIndex < chars.length) {
+                    return chars[this._runItIndex++];
+                } else {
+                    this._runItIndex = 0;
+                    ++this._colorItIndex;
+                    chars = this._runs[this._colorItIndex].chars;
+                    return chars[this._runItIndex++];
+                }
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Creates char outline and reads vertices from it
+     * @param {{*}} [run]
+     * @param {GVertex} [vertex]
+     * @returns {Boolean} true if read successfull
+     * @private
+     */
+    GText.prototype._runReadVertex = function (run, vertex) {
+        this._runItOutline = ifFont.getGlyphOutline(run.family, run.variant, run.size, run.x, run.y, run.char);
+        var transform = this.$ttrf && !this.$ttrf.isIdentity() ? this.$ttrf : null;
+        if (this._verticalShift) {
+            var vtrans = new GTransform(1, 0, 0, 1, 0, this._verticalShift);
+            transform = transform ? vtrans.multiplied(transform) : vtrans;
+        }
+        if (transform) {
+            this._runItOutline = new GVertexTransformer(this._runItOutline, transform);
+        }
+        if (!this._runItOutline.rewindVertices(0)) {
+            throw new Error('Unexpected end of outline');
+        }
+        return this._runItOutline.readVertex(vertex);
     };
 
     /** @override */
