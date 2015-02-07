@@ -1072,16 +1072,35 @@
                     var path = null;
                     if (shape instanceof GPathBase) {
                         var anchorPoints = shape.clearAnchorPoints();
-                        path = new GPath(shape.getProperty('closed'), shape.getProperty('evenodd'), anchorPoints);
-                    } else if (shape.hasMixin(GVertexSource)) {
-                        path = GPathBase.createPathFromVertexSource(shape);
-                    }
-
-                    if (path) {
-                        path.assignFrom(shape);
+                        var path = new GPath(shape.getProperty('closed'), shape.getProperty('evenodd'), anchorPoints);
+                        if (path) {
+                            path.assignFrom(shape);
+                            shape = null;
+                            parent.insertChild(path, next);
+                            newSelection.push(path);
+                        }
+                    } else if (shape instanceof GText) {
+                        var createPathFromColorChunk = function(colorChunk) {
+                            var path = GPathBase.createPathFromVertexSource(new GText.ColorChunkReader(shape));
+                            if (path) {
+                                path.assignFrom(shape);
+                                if (colorChunk.clr) {
+                                    path.setProperty('_fpt', colorChunk.clr);
+                                }
+                                parent.insertChild(path, next);
+                                newSelection.push(path);
+                            }
+                        };
+                        shape.iterateColorChunks(createPathFromColorChunk);
                         shape = null;
-                        parent.insertChild(path, next);
-                        newSelection.push(path);
+                    } else if (shape.hasMixin(GVertexSource)) {
+                        var path = GPathBase.createPathFromVertexSource(shape);
+                        if (path) {
+                            path.assignFrom(shape);
+                            shape = null;
+                            parent.insertChild(path, next);
+                            newSelection.push(path);
+                        }
                     }
                 }
                 shapesToTransform = null;

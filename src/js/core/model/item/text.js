@@ -789,9 +789,8 @@
                     var charColor = GText.Block.cssToProperty('_fpt', css);
 
                     if (char !== ' ') {
-                        // TODO: clarify how this should work with gradient fill
                         if (!colorChunk ||
-                            this._runs.length && this._runs[this._runs.length - 1].clr !== charColor) {
+                            this._runs.length && !GRGBColor.equals(this._runs[this._runs.length - 1].clr, charColor)) {
 
                             colorChunk = [];
                             this._runs.push({
@@ -936,7 +935,7 @@
             } else {
                 this._runItOutline = null;
                 var chars = this._runs[this._colorItIndex].chars;
-                if (this._runItIndex + 1 >= chars.length) {
+                if (this._runItIndex >= chars.length) {
                     return false;
                 }
             }
@@ -1084,35 +1083,42 @@
     /** @override */
     GText.prototype._paintFill = function (context) {
         if (!context.configuration.isOutline(context)) {
-            for (this._colorItIndex = 0; this._colorItIndex < this._runs.length; ++this._colorItIndex) {
-                var colorChunk = this._runs[this._colorItIndex];
+            this.iterateColorChunks(this._paintChunkFill.bind(this, context));
+        }
+    };
 
-                var fill;
-                if (colorChunk.clr) {
-                    fill = this._createShapePaint(context, colorChunk.clr, this._getPatternBBox());
-                } else if (this.hasStyleFill()) {
-                    fill = this._createShapePaint(context, this.$_fpt, this._getPatternBBox());
+    GText.prototype.iterateColorChunks = function (iterator) {
+        for (this._colorItIndex = 0; this._colorItIndex < this._runs.length; ++this._colorItIndex) {
+            var colorChunk = this._runs[this._colorItIndex];
+            iterator(colorChunk);
+        }
+    };
+
+    GText.prototype._paintChunkFill = function (context, colorChunk) {
+        var fill;
+        if (colorChunk.clr) {
+            fill = this._createShapePaint(context, colorChunk.clr, this._getPatternBBox());
+        } else if (this.hasStyleFill()) {
+            fill = this._createShapePaint(context, this.$_fpt, this._getPatternBBox());
+        }
+        if (fill) {
+            var canvas = context.canvas;
+            canvas.putVertices(new GText.ColorChunkReader(this));
+
+            if (fill.transform) {
+                if (this.$trf) {
+                    fill.transform = fill.transform.multiplied(this.$trf);
                 }
-                if (fill) {
-                    var canvas = context.canvas;
-                    canvas.putVertices(new GText.ColorChunkReader(this));
-
-                    if (fill.transform) {
-                        if (this.$trf) {
-                            fill.transform = fill.transform.multiplied(this.$trf);
-                        }
-                        // Apply our fill pattern transformation if any
-                        if (this.$_fpx && !this.$_fpx.isIdentity()) {
-                            fill.transform = fill.transform.preMultiplied(this.$_fpx);
-                        }
-
-                        var oldTransform = canvas.setTransform(canvas.getTransform(true).preMultiplied(fill.transform));
-                        canvas.fillVertices(fill.paint, this.$_fop);
-                        canvas.setTransform(oldTransform);
-                    } else {
-                        canvas.fillVertices(fill.paint, this.$_fop, null, this._isEvenOddFill());
-                    }
+                // Apply our fill pattern transformation if any
+                if (this.$_fpx && !this.$_fpx.isIdentity()) {
+                    fill.transform = fill.transform.preMultiplied(this.$_fpx);
                 }
+
+                var oldTransform = canvas.setTransform(canvas.getTransform(true).preMultiplied(fill.transform));
+                canvas.fillVertices(fill.paint, this.$_fop);
+                canvas.setTransform(oldTransform);
+            } else {
+                canvas.fillVertices(fill.paint, this.$_fop, null, this._isEvenOddFill());
             }
         }
     };
