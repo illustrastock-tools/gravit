@@ -165,6 +165,7 @@
                                                     if (child !== node) {
                                                         if (!el) {
                                                             el = document.createElement('span');
+                                                            el.style.cssText = parent.style.cssText;
                                                         }
                                                         $(el).prepend(child);
                                                         if (i === 1) {
@@ -176,6 +177,7 @@
                                                             parParent.insertBefore(el, parent.nextSibling);
                                                         }
                                                         el = document.createElement('span');
+                                                        el.style.cssText = parent.style.cssText;
                                                         $(el).prepend(child);
                                                         for (var prop in blockCSS) {
                                                             el.style[prop] = blockCSS[prop];
