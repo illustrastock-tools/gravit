@@ -146,6 +146,7 @@
         return result;
     };
 
+    /** @override */
     GBBoxGuide.prototype.useExclusions = function (exclusions) {
         var node;
         this._exclusions = [];
@@ -155,6 +156,24 @@
                 this._exclusions.push(node);
             }
         }
+    };
+
+    /**
+     * Checks if distance guides should be drawn, and returns them in resX and resY arrays
+     * @param {GRect} [rect] the rectangle to map
+     * @param {Array{*]} [resX] filled with X visual lines if distance guides are applicable
+     * @param {Array{*]} [resY] filled with Y visual lines if distance guides are applicable
+     */
+    GBBoxGuide.prototype.checkDistanceGuides = function (rect, resX, resY) {
+        var _snap = function (item) {
+
+        }.bind(this);
+
+        this._scene.accept(function (node) {
+            if (node instanceof GItem && !(node.getParent() instanceof GItem) && !node.hasFlag(GElement.Flag.FullLocked)) {
+                _snap(node);
+            }
+        });
     };
 
     /** @override */

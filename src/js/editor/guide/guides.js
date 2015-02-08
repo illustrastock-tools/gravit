@@ -223,18 +223,17 @@
 
     /**
      * Map a rectangle to the current snapping options
-     * @param {GRect} rectangle the rectangle to map
+     * @param {GRect} [rect] the rectangle to map
      * @returns {GRect} a mapped rectangle
      */
     GGuides.prototype.mapRect = function (rect) {
         /*
          The algorithm is the following:
-         1) For the guide with the first priority try to snap top left, top right, bottom right, bottom left, center:
-         - if more than 1 snaps, then select the closest snap point and return
-         - if 1 snap - snap and return
-         - if no snaps, try to snap horizontally: top, bottom, center; vertically: left, right, center
+         1) For the guide with the first priority try to snap top left, bottom right, center:
+         - if more than 1 snaps, then select the closest snap x and y coordinates
          2) If on the step 1 no snaps or just horizontal of vertical,
          try to find the same way missed snap with the guides with next priorities
+         3) After the initial mapping is found, find the guides to draw
          */
 
         var resRect = rect;
@@ -242,7 +241,6 @@
         var br = rect.getSide(GRect.Side.BOTTOM_RIGHT);
         var cntr = rect.getSide(GRect.Side.CENTER);
         var pivots = [tl, br, cntr];
-        var sides = [GRect.Side.TOP_LEFT, GRect.Side.BOTTOM_RIGHT, GRect.Side.CENTER];
 
         var resX = [];
         var resY = [];
@@ -255,28 +253,27 @@
             guide = this._guides[i];
             if (guide.isMappingAllowed(this._isGuideEnabled(guide))) {
                 // For Unit guide we map only top left corner
-                for (var j = 0; j < sides.length && (j == 0 || !(guide instanceof GUnitGuide)); ++j) {
+                for (var j = 0; j < pivots.length && (j == 0 || !(guide instanceof GUnitGuide)); ++j) {
                     var pivot = pivots[j];
                     res = guide.map(pivot.getX(), pivot.getY(), false, GGuides.options.snapDistance);
                     if (res) {
                         if (res.x) {
                             if (!resX.length) {
+                                resX.push($.extend({}, res.x, {idx: i, pivotIdx: j}));
+                            } else if (resX[0].idx === i && resX[0].delta !== null && res.x.delta !== null &&
+                                res.x.delta < resX[0].delta) {
 
-                                resX.push({x: res.x, idx: i, pivotIdx: j});
-                            } else if (resX[0].idx === i && resX[0].x.delta !== null && res.x.delta !== null &&
-                                res.x.delta < resX[0].x.delta) {
-
-                                resX[0] = {x: res.x, idx: i, pivotIdx: j};
+                                resX[0] = $.extend({}, res.x, {idx: i, pivotIdx: j});
                             }
                         }
                         if (res.y) {
                             if (!resY.length) {
 
-                                resY.push({y: res.y, idx: i, pivotIdx: j});
-                            } else if (resY[0].idx === i && resY[0].y.delta !== null && res.y.delta !== null &&
-                                res.y.delta < resY[0].y.delta) {
+                                resY.push($.extend({}, res.y, {idx: i, pivotIdx: j}));
+                            } else if (resY[0].idx === i && resY[0].delta !== null && res.y.delta !== null &&
+                                res.y.delta < resY[0].delta) {
 
-                                resY[0] = {y: res.y, idx: i, pivotIdx: j};
+                                resY[0] = $.extend({}, res.y, {idx: i, pivotIdx: j});
                             }
                         }
                     }
@@ -288,94 +285,104 @@
         var deltaX = 0;
         var deltaY = 0;
         if (resX.length) {
-            deltaX = resX[0].x.value - pivots[resX[0].pivotIdx].getX();
+            deltaX = resX[0].value - pivots[resX[0].pivotIdx].getX();
         }
 
         if (resY.length) {
-            deltaY = resY[0].y.value - pivots[resY[0].pivotIdx].getY();
+            deltaY = resY[0].value - pivots[resY[0].pivotIdx].getY();
         }
 
         // There is a mapping to apply. Check visuals to draw
         if (deltaX || deltaY) {
             resRect = rect.translated(deltaX, deltaY);
-            var deltaPt = new GPoint(deltaX, deltaY);
-            tl = tl.add(deltaPt);
-            br = br.add(deltaPt);
-            cntr = cntr.add(deltaPt);
-            pivots = [tl, br, cntr];
-
             resX = [];
             resY = [];
-            res = null;
-            var xMin = tl.getX();
-            var xMax = br.getX();
-            var yMin = tl.getY();
-            var yMax = br.getY();
-            for (var i = 0; i < this._guides.length && (!resX.length || !resY.length); ++i) {
-                guide = this._guides[i];
-                if (guide.isMappingAllowed(this._isGuideEnabled(guide))) {
-                    // For Unit guide we map only top left corner
-                    for (var j = 0; j < sides.length && (j == 0 || !(guide instanceof GUnitGuide)); ++j) {
-                        var pivot = pivots[j];
-                        res = guide.map(pivot.getX(), pivot.getY(), false, GGuides.options.snapDistance);
-                        if (res) {
-                            if (res.x) {
-                                if (res.x.delta === 0 && (!resX.length || resX[0].idx === i)) {
-                                    if (res.x.guide) {
-                                        if (yMin < res.x.guide[0].getY()) {
-                                            res.x.guide[0] = new GPoint(res.x.guide[0].getX(), yMin);
+
+            // Check distance guides visuals
+            var bboxGuide = this._getBBoxGuide();
+            if (bboxGuide && bboxGuide.isMappingAllowed(this._isGuideEnabled(bboxGuide))) {
+                bboxGuide.checkDistanceGuides(resRect, resX, resY);
+            }
+
+            // Select guides visuals
+            if (!resX.length || !resY.length) {
+                var deltaPt = new GPoint(deltaX, deltaY);
+                tl = tl.add(deltaPt);
+                br = br.add(deltaPt);
+                cntr = cntr.add(deltaPt);
+                pivots = [tl, br, cntr];
+
+                var xMin = tl.getX();
+                var xMax = br.getX();
+                var yMin = tl.getY();
+                var yMax = br.getY();
+                res = null;
+                for (var i = 0; i < this._guides.length && (!resX.length || !resY.length); ++i) {
+                    guide = this._guides[i];
+                    if (guide.isMappingAllowed(this._isGuideEnabled(guide))) {
+                        // For Unit guide we map only top left corner
+                        for (var j = 0; j < pivots.length && (j == 0 || !(guide instanceof GUnitGuide)); ++j) {
+                            var pivot = pivots[j];
+                            res = guide.map(pivot.getX(), pivot.getY(), false, GGuides.options.snapDistance);
+                            if (res) {
+                                if (res.x) {
+                                    if (res.x.delta === 0 && (!resX.length || resX[0].idx === i)) {
+                                        if (res.x.guide) {
+                                            if (yMin < res.x.guide[0].getY()) {
+                                                res.x.guide[0] = new GPoint(res.x.guide[0].getX(), yMin);
+                                            }
+                                            if (yMax > res.x.guide[1].getY()) {
+                                                res.x.guide[1] = new GPoint(res.x.guide[1].getX(), yMax);
+                                            }
                                         }
-                                        if (yMax > res.x.guide[1].getY()) {
-                                            res.x.guide[1] = new GPoint(res.x.guide[1].getX(), yMax);
-                                        }
+                                        resX.push($.extend({}, res.x, {idx: i, pivotIdx: j}));
                                     }
-                                    resX.push({x: res.x, idx: i, pivotIdx: j});
+                                }
+                                if (res.y) {
+                                    if (res.y.delta === 0 && (!resY.length || resY[0].idx === i)) {
+                                        if (res.y.guide) {
+                                            if (xMin < res.y.guide[0].getX()) {
+                                                res.y.guide[0] = new GPoint(xMin, res.y.guide[0].getY());
+                                            }
+                                            if (xMax > res.y.guide[1].getX()) {
+                                                res.y.guide[1] = new GPoint(xMax, res.y.guide[1].getY());
+                                            }
+                                        }
+                                        resY.push($.extend({}, res.y, {idx: i, pivotIdx: j}));
+                                    }
                                 }
                             }
-                            if (res.y) {
-                                if (res.y.delta === 0 && (!resY.length || resY[0].idx === i)) {
-                                    if (res.y.guide) {
-                                        if (xMin < res.y.guide[0].getX()) {
-                                            res.y.guide[0] = new GPoint(xMin, res.y.guide[0].getY());
-                                        }
-                                        if (xMax > res.y.guide[1].getX()) {
-                                            res.y.guide[1] = new GPoint(xMax, res.y.guide[1].getY());
-                                        }
-                                    }
-                                    resY.push({y: res.y, idx: i, pivotIdx: j});
-                                }
-                            }
+                            res = null;
                         }
-                        res = null;
                     }
                 }
             }
 
             if (this._visuals) {
                 for (var i = 0; i < resX.length; ++i) {
-                    if (this._visuals && resX[i].x.guide) {
-                        if (resX[i].x.guide instanceof GPoint) {
-                            if (Math.abs(resX[i].x.value - resX[i].x.guide.getX()) >= 2 ||
-                                Math.abs(pivots[resX[i].pivotIdx].getY() - resX[i].x.guide.getY()) >= 2) {
+                    if (this._visuals && resX[i].guide) {
+                        if (resX[i].guide instanceof GPoint) {
+                            if (Math.abs(resX[i].value - resX[i].guide.getX()) >= 2 ||
+                                Math.abs(pivots[resX[i].pivotIdx].getY() - resX[i].guide.getY()) >= 2) {
 
-                                this._visuals.push([new GPoint(resX[i].x.value, pivots[resX[i].pivotIdx].getY()), resX[i].x.guide]);
+                                this._visuals.push([new GPoint(resX[i].x.value, pivots[resX[i].pivotIdx].getY()), resX[i].guide]);
                             }
                         } else {
-                            this._visuals.push(resX[i].x.guide);
+                            this._visuals.push(resX[i].guide);
                         }
                     }
                 }
 
                 for (var i = 0; i < resY.length; ++i) {
-                    if (this._visuals && resY[i].y.guide) {
-                        if (resY[i].y.guide instanceof GPoint) {
-                            if (Math.abs(resY[i].y.value - resY[i].y.guide.getY()) >= 2 ||
-                                Math.abs(pivots[resY[i].pivotIdx].getX() - resY[i].y.guide.getX()) >= 2) {
+                    if (this._visuals && resY[i].guide) {
+                        if (resY[i].guide instanceof GPoint) {
+                            if (Math.abs(resY[i].value - resY[i].guide.getY()) >= 2 ||
+                                Math.abs(pivots[resY[i].pivotIdx].getX() - resY[i].guide.getX()) >= 2) {
 
-                                this._visuals.push([new GPoint(pivots[resY[i].pivotIdx].getX(), resY[i].y.value), resY[i].y.guide]);
+                                this._visuals.push([new GPoint(pivots[resY[i].pivotIdx].getX(), resY[i].value), resY[i].guide]);
                             }
                         } else {
-                            this._visuals.push(resY[i].y.guide);
+                            this._visuals.push(resY[i].guide);
                         }
                     }
                 }
@@ -545,6 +552,20 @@
     GGuides.prototype._isGuideEnabled = function (guide) {
         var guides = GGuides.options.guides;
         return guides && (guides.length === 0 || guides.indexOf(guide.getId()) >= 0);
+    };
+
+    /**
+     * Find and return bbox guide reference
+     * @returns {GBBoxGuide} bbox guide reference or null, if not bbox guide not inited
+     * @private
+     */
+    GGuides.prototype._getBBoxGuide = function () {
+        for (var i = 0; i < this._guides.length; ++i) {
+            if (this._guides[i] instanceof GBBoxGuide) {
+                return this._guides[i];
+            }
+        }
+        return null;
     };
 
     /** @override */
