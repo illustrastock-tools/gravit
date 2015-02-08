@@ -50,8 +50,7 @@
                 var br = bBox.getSide(GRect.Side.BOTTOM_RIGHT);
                 var cntr = bBox.getSide(GRect.Side.CENTER);
                 var pivots = [tl, br, cntr];
-                var sides = [GRect.Side.TOP_LEFT, GRect.Side.BOTTOM_RIGHT, GRect.Side.CENTER];
-                for (var i = 0; i < sides.length; ++i) {
+                for (var i = 0; i < pivots.length; ++i) {
                     var pivot = pivots[i];
                     delta = Math.abs(x - pivot.getX());
                     if (resX === null && delta <= snapDistance ||
@@ -161,12 +160,43 @@
     /**
      * Checks if distance guides should be drawn, and returns them in resX and resY arrays
      * @param {GRect} [rect] the rectangle to map
-     * @param {Array{*]} [resX] filled with X visual lines if distance guides are applicable
-     * @param {Array{*]} [resY] filled with Y visual lines if distance guides are applicable
+     * @param {Array{*}} [resX] filled with X visual lines if distance guides are applicable
+     * @param {Array{*}} [resY] filled with Y visual lines if distance guides are applicable
      */
     GBBoxGuide.prototype.checkDistanceGuides = function (rect, resX, resY) {
+        var itemsX = [];
+        var itemsY = [];
+        var rectTl = rect.getSide(GRect.Side.TOP_LEFT);
+        var rectBr = rect.getSide(GRect.Side.BOTTOM_RIGHT);
+        var rectCntr = rect.getSide(GRect.Side.CENTER);
+        var rectPivots = [rectTl, rectBr, rectCntr];
         var _snap = function (item) {
+            if (this._exclusions && this._exclusions.length) {
+                for (var i = 0; i < this._exclusions.length; ++i) {
+                    if (this._exclusions[i] == item) {
+                        return;
+                    }
+                }
+            }
 
+            var bBox = item.getGeometryBBox();
+            if (bBox && !bBox.isEmpty()) {
+                var tl = bBox.getSide(GRect.Side.TOP_LEFT);
+                var br = bBox.getSide(GRect.Side.BOTTOM_RIGHT);
+                var cntr = bBox.getSide(GRect.Side.CENTER);
+                var pivots = [tl, br, cntr];
+                for (var i = 0; i < pivots.length; ++i) {
+                    var pivot = pivots[i];
+                    for (var j = 0; j < rectPivots.length; ++j) {
+                        if (Math.abs(rectPivots[j].getX() - pivot.getX()) === 0) {
+                            itemsX.push({rectPivotIdx: j, itbBox: bBox, itPivotIdx: i, itPivotVal: pivots[pivotIdx]});
+                        }
+                        if (Math.abs(rectPivots[j].getY() - pivot.getY()) === 0) {
+                            itemsY.push({rectPivotIdx: j, itbBox: bBox, itPivotIdx: i, itPivotVal: pivots[pivotIdx]});
+                        }
+                    }
+                }
+            }
         }.bind(this);
 
         this._scene.accept(function (node) {
@@ -174,6 +204,13 @@
                 _snap(node);
             }
         });
+
+        if (itemsX.length > 1) {
+           // TODO: find two nearest items and snap to them only taking into account the distance
+        }
+        if (itemsY.length > 1) {
+            // TODO: find two nearest items and snap to them only taking into account the distance
+        }
     };
 
     /** @override */
