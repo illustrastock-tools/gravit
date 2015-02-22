@@ -12,7 +12,9 @@
         this._counter = 0;
         this._visuals = [];
 
-        this._addGuide(new GBBoxGuide(this));
+        var bboxGuide = new GBBoxGuide(this);
+        bboxGuide.setPriority(GBBoxGuide.PRIORITY.DISTANCE_FIRST);
+        this._addGuide(bboxGuide);
         this._addGuide(new GPageGuide(this));
         this._addGuide(new GGridGuide(this));
         this._addGuide(new GUnitGuide(this));
@@ -245,6 +247,17 @@
         var resX = [];
         var resY = [];
 
+        // Check bbox distance guide at first
+        var bboxGuide = this._getBBoxGuide();
+        if (bboxGuide && bboxGuide.isMappingAllowed(this._isGuideEnabled(bboxGuide))) {
+            var newRect = bboxGuide.checkDistanceGuidesMapping(resRect, resX, resY, GGuides.options.snapDistance);
+
+            if (resX.length) {
+                this._visuals = this._visuals.concat(resX);
+                return newRect;
+            }
+        }
+
         var guide;
         var res = null;
         var targPts = [];
@@ -252,6 +265,10 @@
         for (var i = 0; i < this._guides.length && (!resX.length || !resY.length); ++i) {
             guide = this._guides[i];
             if (guide.isMappingAllowed(this._isGuideEnabled(guide))) {
+                if (guide instanceof GBBoxGuide) {
+                    //guide.checkDistanceGuidesMapping(rect, resX, resY, GGuides.options.snapDistance);
+                }
+
                 // For Unit guide we map only top left corner
                 for (var j = 0; j < pivots.length && (j == 0 || !(guide instanceof GUnitGuide)); ++j) {
                     var pivot = pivots[j];
@@ -297,12 +314,6 @@
             resRect = rect.translated(deltaX, deltaY);
             resX = [];
             resY = [];
-
-            // Check distance guides visuals
-            var bboxGuide = this._getBBoxGuide();
-            if (bboxGuide && bboxGuide.isMappingAllowed(this._isGuideEnabled(bboxGuide))) {
-                bboxGuide.checkDistanceGuides(resRect, resX, resY);
-            }
 
             // Select guides visuals
             if (!resX.length || !resY.length) {

@@ -661,6 +661,71 @@
             .multiplied(new GTransform(1, 0, 0, 1, tx, ty));
     };
 
+    /**
+     * Calculates and returns x and y offset of two rectangles from each other
+     * as x and y difference between two nearest points of the rectangles.
+     * If the rectangles coordinates overlap by some coordinate, null offset is returned for this coordinate
+     * @param {GRect} otherRect
+     * @param {Boolean} [getX] indicates if X offset is needed
+     * @param {Boolean} [getY] indicates if Y offset is needed
+     * @returns {{x: Number, y: Number}}
+     */
+    GRect.prototype.getXYOffset = function (otherRect, getX, getY) {
+        var xDist = null;
+        var yDist = null;
+
+        if (getX) {
+            var minXDist = null;
+            var maxXDist = null;
+            var ar1 = [this._x, this._x + this._width];
+            var ar2 = [otherRect._x, otherRect._x + otherRect._width];
+            var d;
+            for (var i = 0; i < ar1.length; ++i) {
+                for (var j = 0; j < ar2.length; ++j) {
+                    d = ar2[j] - ar1[i];
+                    if (minXDist === null || d < minXDist) {
+                        minXDist = d;
+                    }
+                    if (maxXDist === null || d > maxXDist) {
+                        maxXDist = d;
+                    }
+                }
+            }
+
+            if (minXDist >= 0 && maxXDist >= 0) {
+                xDist = Math.min(minXDist, maxXDist);
+            } else if (minXDist < 0 && maxXDist < 0) {
+                xDist = Math.max(minXDist, maxXDist);
+            }
+        }
+
+        if (getY) {
+            var minYDist = null;
+            var maxYDist = null;
+            var ar1 = [this._y, this._y + this._height];
+            var ar2 = [otherRect._y, otherRect._y + otherRect._height];
+            for (var i = 0; i < ar1.length; ++i) {
+                for (var j = 0; j < ar2.length; ++j) {
+                    d = ar2[j] - ar1[i];
+                    if (minYDist === null || d < minYDist) {
+                        minYDist = d;
+                    }
+                    if (maxYDist === null || d > maxYDist) {
+                        maxYDist = d;
+                    }
+                }
+            }
+
+            if (minYDist >= 0 && maxYDist >= 0) {
+                yDist = Math.min(minYDist, maxYDist);
+            } else if (minYDist < 0 && maxYDist < 0) {
+                yDist = Math.max(minYDist, maxYDist);
+            }
+        }
+
+        return {x: xDist, y: yDist};
+    };
+
     /** @override */
     GRect.prototype.toString = function () {
         return "[Object GRect(x=" + this._x + ", y=" + this._y + ", width=" + this._width + ", height=" + this._height + ")]";
