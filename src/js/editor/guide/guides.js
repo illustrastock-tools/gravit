@@ -26,7 +26,7 @@
         /**
          * The snap distance
          */
-        snapDistance: 5,
+        snapDistance: 20,
 
         /**
          * The length of snap zone lines in pixels

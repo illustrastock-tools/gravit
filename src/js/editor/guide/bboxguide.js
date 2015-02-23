@@ -301,7 +301,7 @@
                         for (var j = i + 1; j < minDeltaXPos.length; ++j) {
                             xyOffs = minDeltaXPos[i].itbBox.getXYOffset(minDeltaXPos[j].itbBox, true, true);
                             if (xyOffs.y && !xyOffs.x) {
-                                yDists.push({dist: xyOffs.y, i: i, j: j});
+                                yDists.push({offsJfromI: xyOffs.y, i: i, j: j});
                             }
                         }
                     }
@@ -309,40 +309,63 @@
                     // 5. Select a pair for which the difference of absolute value of Y offset from rect to one of items
                     // with absolute value of pair Y offset is less than snap distance,
                     // and is minimal between all other pairs
-                    var xyOffsI, xyOffsJ;
+                    var offsIFromRect, offsJFromRect;
                     var minYSnapPair = null;
                     for (var it = 0; it < yDists.length; ++it) {
-                        xyOffsI = rect.getXYOffset(minDeltaXPos[yDists[it].i].itbBox, false, true);
-                        xyOffsJ = rect.getXYOffset(minDeltaXPos[yDists[it].j].itbBox, false, true);
+                        offsIFromRect = rect.getXYOffset(minDeltaXPos[yDists[it].i].itbBox, false, true);
+                        offsJFromRect = rect.getXYOffset(minDeltaXPos[yDists[it].j].itbBox, false, true);
 
-                        var delta = Math.abs(Math.abs(xyOffsI.y) - Math.abs(yDists[it].dist));
+                        var delta = Math.abs(Math.abs(offsIFromRect.y) - Math.abs(yDists[it].offsJfromI));
                         if (delta <= snapDistance && (!minYSnapPair || delta < minYSnapPair.absDeltaY)) {
+                            var deltaY;
+                            if (Math.abs(yDists[it].offsJfromI) >= Math.abs(offsIFromRect.y) && offsIFromRect.y > 0 ||
+                                Math.abs(yDists[it].offsJfromI) < Math.abs(offsIFromRect.y) && offsIFromRect.y < 0) {
+
+                                deltaY = -delta;
+                            } else {
+                                deltaY = delta;
+                            }
                             minYSnapPair = {
                                 absDeltaY: delta,
-                                // TODO: select sign;
-                                deltaY: Math.abs(xyOffsI.y) - Math.abs(yDists[it].dist),
+                                deltaY: deltaY,
                                 i: yDists[it].i,
                                 j: yDists[it].j
                             };
                         }
 
-                        delta = Math.abs(Math.abs(xyOffsJ.y) - Math.abs(yDists[it].dist));
+                        delta = Math.abs(Math.abs(offsJFromRect.y) - Math.abs(yDists[it].offsJfromI));
                         if (delta <= snapDistance && (!minYSnapPair || delta < minYSnapPair.absDeltaY)) {
+                            var deltaY;
+                            if (Math.abs(yDists[it].offsJfromI) >= Math.abs(offsJFromRect.y) && offsJFromRect.y > 0 ||
+                                Math.abs(yDists[it].offsJfromI) < Math.abs(offsJFromRect.y) && offsJFromRect.y < 0) {
+
+                                deltaY = -delta;
+                            } else {
+                                deltaY = delta;
+                            }
                             minYSnapPair = {
                                 absDeltaY: delta,
-                                // TODO: select sign;
-                                deltaY: Math.abs(xyOffsJ.y) - Math.abs(yDists.dist),
+                                deltaY: deltaY,
                                 i: yDists[it].i,
                                 j: yDists[it].j
                             }
                         }
 
-                        delta = Math.abs(Math.abs(xyOffsI.y) - Math.abs(xyOffsJ.y));
+                        delta = Math.abs(Math.abs(offsIFromRect.y) - Math.abs(offsJFromRect.y)) / 2;
                         if (delta <= snapDistance && (!minYSnapPair || delta < minYSnapPair.absDeltaY)) {
+                            var deltaY;
+                            if (Math.abs(offsIFromRect.y) >= Math.abs(offsJFromRect.y) &&
+                                offsIFromRect.y < 0 && offsJFromRect.y > 0 ||
+                                Math.abs(offsIFromRect.y) <= Math.abs(offsJFromRect.y) &&
+                                offsIFromRect.y > 0 && offsJFromRect.y < 0) {
+
+                                deltaY = -delta;
+                            } else {
+                                deltaY = delta;
+                            }
                             minYSnapPair = {
                                 absDeltaY: delta,
-                                // TODO: select sign;
-                                deltaY: Math.abs(xyOffsI.y) - Math.abs(xyOffsJ.y),
+                                deltaY: deltaY,
                                 i: yDists[it].i,
                                 j: yDists[it].j
                             }
