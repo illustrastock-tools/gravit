@@ -2,14 +2,14 @@
 
 ## Introduction
 
-Gravit is a design tool for Mac, Windows, Linux, ChromeOS and the Browser made
+Gravit is a design tool for Mac, Windows, Linux, ChromeOS and the browser made
 in the spirit for Freehand and Fireworks. It is completely written in HTML5,
-Javascript and CSS3. Gravit consists of the core engine called "Infinity", the
-actual Application and the core Module called "Gravit".
+JavaScript and CSS3. Gravit consists of the core engine called "Infinity", the
+actual application and the core module called "Gravit".
 
 We'd like to encourage everyone in getting involved with this project. You can
-develop new features or take a ticket and fix it. Or if you're a UX/Designer, you
-could help designing new icons or improving the UI. To get started contributing,
+develop new features or take a ticket and fix it. Or if you're a UI designer, you
+could help us by designing new icons or improving the UI. To get started,
 read the [GitHub Guide](https://guides.github.com/activities/contributing-to-open-source/).
 
 ## Prerequisites
@@ -27,10 +27,10 @@ Then run `npm install` to install all nodejs dependencies.
 Then run `bower install` to install all client javascript libraries.
 
 Finally run `grunt`. You can then open Gravit in your
-webbrowser at http://127.0.0.1:8999/.
+browser at the following location: http://127.0.0.1:8999/.
 
-We recommend using Chrome as this is the browser also used for the standalone
-version.
+We recommend using Google Chrome as this is the browser also used for the standalone
+version of Gravit.
 
 ## Quick Overview
 
