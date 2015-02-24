@@ -223,26 +223,26 @@
                 var br = bBox.getSide(GRect.Side.BOTTOM_RIGHT);
                 var cntr = bBox.getSide(GRect.Side.CENTER);
                 var pivots = [tl, br, cntr];
+                var xUsed = false;
+                var yUsed = false;
                 for (var i = 0; i < pivots.length; ++i) {
                     var pivot = pivots[i];
                     for (var j = 0; j < rectPivots.length; ++j) {
                         delta = Math.abs(rectPivots[j].getX() - pivot.getX());
-                        if (delta <= snapDistance) {
+                        if (delta <= snapDistance && !xUsed) {
+                            // TODO: ensure to push the minimal delta between pivots coordinates
                             itemsX.push({
-                                rectPivotIdx: j,
                                 itbBox: bBox,
-                                delta: rectPivots[j].getX() - pivot.getX(),
-                                itPivotIdx: i,
-                                itPivotVal: pivots[i]});
+                                delta: pivot.getX() - rectPivots[j].getX()});
+                            xUsed = true;
                         }
                         delta = Math.abs(rectPivots[j].getY() - pivot.getY());
-                        if (delta <= snapDistance) {
+                        if (delta <= snapDistance && !yUsed) {
+                            // TODO: ensure to push the minimal delta between pivots coordinates
                             itemsY.push({
-                                rectPivotIdx: j,
                                 itbBox: bBox,
-                                delta: rectPivots[j].getY() - pivot.getY(),
-                                itPivotIdx: i,
-                                itPivotVal: pivots[i]});
+                                delta: pivot.getY() - rectPivots[j].getY()});
+                            yUsed = true;
                         }
                     }
                 }
@@ -290,16 +290,15 @@
 
             // 3. If there are more than 1 item found with minimal X offset suitable for snapping, we can check Y snap offset
             if (!intersection && (minDeltaXPos.length > 1 || minDeltaXNeg.length > 1)) {
-                var minDeltaX = null;
                 var xyOffs;
                 var yDists = [];
-                var overlap = false;
-                if (minDeltaXPos.length > 1) {
+
+                var _getMinYSnapPair = function (minDeltaX) {
                     // 4. Find X and Y offset between each pair of items with minimal X offset,
                     // and select those for which X offset is null or 0
-                    for (var i = 0; i < minDeltaXPos.length - 1; ++i) {
-                        for (var j = i + 1; j < minDeltaXPos.length; ++j) {
-                            xyOffs = minDeltaXPos[i].itbBox.getXYOffset(minDeltaXPos[j].itbBox, true, true);
+                    for (var i = 0; i < minDeltaX.length - 1; ++i) {
+                        for (var j = i + 1; j < minDeltaX.length; ++j) {
+                            xyOffs = minDeltaX[i].itbBox.getXYOffset(minDeltaX[j].itbBox, true, true);
                             if (xyOffs.y && !xyOffs.x) {
                                 yDists.push({offsJfromI: xyOffs.y, i: i, j: j});
                             }
@@ -312,8 +311,8 @@
                     var offsIFromRect, offsJFromRect;
                     var minYSnapPair = null;
                     for (var it = 0; it < yDists.length; ++it) {
-                        offsIFromRect = rect.getXYOffset(minDeltaXPos[yDists[it].i].itbBox, false, true);
-                        offsJFromRect = rect.getXYOffset(minDeltaXPos[yDists[it].j].itbBox, false, true);
+                        offsIFromRect = rect.getXYOffset(minDeltaX[yDists[it].i].itbBox, false, true);
+                        offsJFromRect = rect.getXYOffset(minDeltaX[yDists[it].j].itbBox, false, true);
 
                         var delta = Math.abs(Math.abs(offsIFromRect.y) - Math.abs(yDists[it].offsJfromI));
                         if (delta <= snapDistance && (!minYSnapPair || delta < minYSnapPair.absDeltaY)) {
@@ -372,18 +371,38 @@
                         }
                     }
 
-                    // 6. Use the selected pair for distance guides snapping and drawing
-                    if (minYSnapPair) {
-                        newRect = rect.translated(minDeltaXPos[0].delta, minYSnapPair.deltaY);
-                        guides = this.getXDistGuides(
-                            minDeltaXPos[minYSnapPair.i].itbBox,
-                            minDeltaXPos[minYSnapPair.j].itbBox,
-                            newRect);
+                    return minYSnapPair;
+                };
 
-                        if (guides) {
-                            for (var i = 0; i < guides.length; ++i) {
-                                resX.push(guides[i]);
-                            }
+                var minYSnapPairPos = null;
+                var minYSnapPairNeg = null;
+                if (minDeltaXPos.length > 1) {
+                    minYSnapPairPos = _getMinYSnapPair(minDeltaXPos);
+                }
+                if (minDeltaXNeg.length > 1) {
+                    minYSnapPairNeg = _getMinYSnapPair(minDeltaXNeg);
+                }
+                var minYSnapPair;
+                var minDeltaX;
+                if (minYSnapPairPos && (!minYSnapPairNeg || minYSnapPairPos.absDeltaY <= minYSnapPairNeg.absDeltaY)) {
+                    minYSnapPair = minYSnapPairPos;
+                    minDeltaX = minDeltaXPos;
+                } else if (minYSnapPairNeg) {
+                    minYSnapPair = minYSnapPairNeg;
+                    minDeltaX = minDeltaXNeg;
+                }
+
+                // 6. Use the selected pair for distance guides snapping and drawing
+                if (minYSnapPair) {
+                    newRect = rect.translated(minDeltaX[0].delta, minYSnapPair.deltaY);
+                    guides = this.getXDistGuides(
+                        minDeltaX[minYSnapPair.i].itbBox,
+                        minDeltaX[minYSnapPair.j].itbBox,
+                        newRect);
+
+                    if (guides) {
+                        for (var i = 0; i < guides.length; ++i) {
+                            resX.push(guides[i]);
                         }
                     }
                 }
