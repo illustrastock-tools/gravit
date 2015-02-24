@@ -26,7 +26,7 @@
         /**
          * The snap distance
          */
-        snapDistance: 20,
+        snapDistance: 5,
 
         /**
          * The length of snap zone lines in pixels
@@ -248,12 +248,17 @@
         var resY = [];
 
         // Check bbox distance guide at first
+        // TODO: support GBBoxGuide.PRIORITY switch
         var bboxGuide = this._getBBoxGuide();
         if (bboxGuide && bboxGuide.isMappingAllowed(this._isGuideEnabled(bboxGuide))) {
             var newRect = bboxGuide.checkDistanceGuidesMapping(resRect, resX, resY, GGuides.options.snapDistance);
 
-            if (resX.length) {
-                this._visuals = this._visuals.concat(resX);
+            if (newRect && (resX.length || resY.length)) {
+                if (resX.length) {
+                    this._visuals = this._visuals.concat(resX);
+                } else {
+                    this._visuals = this._visuals.concat(resY);
+                }
                 return newRect;
             }
         }
@@ -265,10 +270,6 @@
         for (var i = 0; i < this._guides.length && (!resX.length || !resY.length); ++i) {
             guide = this._guides[i];
             if (guide.isMappingAllowed(this._isGuideEnabled(guide))) {
-                if (guide instanceof GBBoxGuide) {
-                    //guide.checkDistanceGuidesMapping(rect, resX, resY, GGuides.options.snapDistance);
-                }
-
                 // For Unit guide we map only top left corner
                 for (var j = 0; j < pivots.length && (j == 0 || !(guide instanceof GUnitGuide)); ++j) {
                     var pivot = pivots[j];
