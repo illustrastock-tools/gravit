@@ -232,29 +232,36 @@
                 var br = bBox.getSide(GRect.Side.BOTTOM_RIGHT);
                 var cntr = bBox.getSide(GRect.Side.CENTER);
                 var pivots = [tl, br, cntr];
-                var xUsed = false;
-                var yUsed = false;
+                var xItem = null;
+                var yItem = null;
                 var delta;
+                var absDelta;
                 for (var i = 0; i < pivots.length; ++i) {
                     var pivot = pivots[i];
                     for (var j = 0; j < rectPivots.length; ++j) {
-                        delta = Math.abs(rectPivots[j].getX() - pivot.getX());
-                        if (delta <= snapDistance && !xUsed) {
-                            // TODO: ensure to push the minimal delta between pivots coordinates
-                            itemsX.push({
-                                itbBox: bBox,
-                                delta: pivot.getX() - rectPivots[j].getX()});
-                            xUsed = true;
+                        delta = pivot.getX() - rectPivots[j].getX();
+                        absDelta = Math.abs(delta);
+                        if (absDelta <= snapDistance && (!xItem || absDelta < xItem.absDelta)) {
+                            xItem = {
+                                bBox: bBox,
+                                delta: delta,
+                                absDelta: absDelta};
                         }
-                        delta = Math.abs(rectPivots[j].getY() - pivot.getY());
-                        if (delta <= snapDistance && !yUsed) {
-                            // TODO: ensure to push the minimal delta between pivots coordinates
-                            itemsY.push({
-                                itbBox: bBox,
-                                delta: pivot.getY() - rectPivots[j].getY()});
-                            yUsed = true;
+                        delta = pivot.getY() - rectPivots[j].getY();
+                        absDelta = Math.abs(delta);
+                        if (absDelta <= snapDistance && (!yItem || absDelta < yItem.absDelta)) {
+                            yItem = {
+                                bBox: bBox,
+                                delta: delta,
+                                absDelta: absDelta};
                         }
                     }
+                }
+                if (xItem) {
+                    itemsX.push(xItem);
+                }
+                if (yItem) {
+                    itemsY.push(yItem);
                 }
             }
         }.bind(this);
@@ -276,10 +283,10 @@
             // and find the items with minimal pivot X offset
             for (var i = 0; i < items.length && !intersection; ++i) {
                 item = items[i];
-                var intRect = rect.intersected(item.itbBox);
+                var intRect = rect.intersected(item.bBox);
                 intersection = !intRect.isEmpty();
-                if (!intersection && (minDelta === null || Math.abs(item.delta) <= Math.abs(minDelta))) {
-                    if (minDelta === null ||  Math.abs(item.delta) < Math.abs(minDelta)) {
+                if (!intersection && (minDelta === null || item.absDelta <= minDelta)) {
+                    if (minDelta === null ||  item.absDelta < minDelta) {
                         if (item.delta >= 0) {
                             minDeltaPos = [item];
                             minDeltaNeg = [];
@@ -287,8 +294,8 @@
                             minDeltaNeg = [item];
                             minDeltaPos = [];
                         }
-                        minDelta = item.delta;
-                    } else { // Math.abs(item.delta) == Math.abs(minDelta)
+                        minDelta = item.absDelta;
+                    } else { // item.absDelta == minDelta
                         if (item.delta >= 0) {
                             minDeltaPos.push(item);
                         } else {
@@ -306,6 +313,129 @@
             return {minDeltaPos: minDeltaPos, minDeltaNeg: minDeltaNeg};
         };
 
+        // {Boolean} xAr indicates if array of items for trivial X alignment and distance Y snapping is passed
+        // if xAr is false, consider array of items for trivial Y alignment and distance X snapping  is passed
+        var _getMinSnapPair = function (minDeltaAr, xAr) {
+            // 4. Find X and Y offset between each pair of items with minimal pivot X offset,
+            // and select those for which X offset inside pair is null or 0
+            var offsAr = [];
+            for (var i = 0; i < minDeltaAr.length - 1; ++i) {
+                for (var j = i + 1; j < minDeltaAr.length; ++j) {
+                    var xyOffs = minDeltaAr[i].bBox.getXYOffset(minDeltaAr[j].bBox, true, true);
+                    if (xAr) {
+                        if (xyOffs.y && !xyOffs.x) {
+                            offsAr.push({offsJfromI: xyOffs.y, i: i, j: j});
+                        }
+                    } else {
+                        if (xyOffs.x && !xyOffs.y) {
+                            offsAr.push({offsJfromI: xyOffs.x, i: i, j: j});
+                        }
+                    }
+                }
+            }
+
+            // 5. Select a pair for which the difference of absolute value of Y offset from rect to one of items
+            // with absolute value of pair Y offset is less than snap distance,
+            // and is minimal between all other pairs
+            var offs;
+            var offsIFromRect, offsJFromRect;
+            var minSnapVals = null;
+            for (var it = 0; it < offsAr.length; ++it) {
+                var bboxI = minDeltaAr[offsAr[it].i].bBox;
+                var bboxJ = minDeltaAr[offsAr[it].j].bBox;
+                if (xAr) {
+                    offs = rect.getXYOffset(bboxI, false, true);
+                    offsIFromRect = offs.y;
+                    offs = rect.getXYOffset(bboxJ, false, true);
+                    offsJFromRect = offs.y;
+                } else {
+                    offs = rect.getXYOffset(bboxI, true, false);
+                    offsIFromRect = offs.x;
+                    offs = rect.getXYOffset(bboxJ, true, false);
+                    offsJFromRect = offs.x;
+                }
+
+                var absDelta = Math.abs(Math.abs(offsIFromRect) - Math.abs(offsAr[it].offsJfromI));
+                if (absDelta <= snapDistance && (!minSnapVals || absDelta < minSnapVals.absDelta)) {
+                    var delta;
+                    if (Math.abs(offsAr[it].offsJfromI) >= Math.abs(offsIFromRect) && offsIFromRect > 0 ||
+                        Math.abs(offsAr[it].offsJfromI) < Math.abs(offsIFromRect) && offsIFromRect < 0) {
+
+                        delta = -absDelta;
+                    } else {
+                        delta = absDelta;
+                    }
+                    minSnapVals = {
+                        absDelta: absDelta,
+                        delta: delta,
+                        bbox1: bboxI,
+                        bbox2: bboxJ
+                    };
+                }
+
+                absDelta = Math.abs(Math.abs(offsJFromRect) - Math.abs(offsAr[it].offsJfromI));
+                if (absDelta <= snapDistance && (!minSnapVals || absDelta < minSnapVals.absDelta)) {
+                    var delta;
+                    if (Math.abs(offsAr[it].offsJfromI) >= Math.abs(offsJFromRect) && offsJFromRect > 0 ||
+                        Math.abs(offsAr[it].offsJfromI) < Math.abs(offsJFromRect) && offsJFromRect < 0) {
+
+                        delta = -absDelta;
+                    } else {
+                        delta = absDelta;
+                    }
+                    minSnapVals = {
+                        absDelta: absDelta,
+                        delta: delta,
+                        bbox1: bboxI,
+                        bbox2: bboxJ
+                    };
+                }
+
+                absDelta = Math.abs(Math.abs(offsIFromRect) - Math.abs(offsJFromRect)) / 2;
+                if (absDelta <= snapDistance && (!minSnapVals || absDelta < minSnapVals.absDelta)) {
+                    var delta;
+                    if (Math.abs(offsIFromRect) >= Math.abs(offsJFromRect) &&
+                        offsIFromRect < 0 && offsJFromRect > 0 ||
+                        Math.abs(offsIFromRect.y) <= Math.abs(offsJFromRect) &&
+                            offsIFromRect > 0 && offsJFromRect < 0) {
+
+                        delta = -absDelta;
+                    } else {
+                        delta = absDelta;
+                    }
+                    minSnapVals = {
+                        absDelta: absDelta,
+                        delta: delta,
+                        bbox1: bboxI,
+                        bbox2: bboxJ
+                    };
+                }
+            }
+            var minSnapPair = null;
+            if (minSnapVals) {
+                if (xAr) {
+                    minSnapPair = {
+                        absDeltaX: minDeltaAr[0].absDelta,
+                        deltaX: minDeltaAr[0].delta,
+                        absDeltaY: minSnapVals.absDelta,
+                        deltaY: minSnapVals.delta,
+                        bbox1: minSnapVals.bbox1,
+                        bbox2: minSnapVals.bbox2
+                    };
+                } else {
+                    minSnapPair = {
+                        absDeltaX: minSnapVals.absDelta,
+                        deltaX: minSnapVals.delta,
+                        absDeltaY: minDeltaAr[0].absDelta,
+                        deltaY: minDeltaAr[0].delta,
+                        bbox1: minSnapVals.bbox1,
+                        bbox2: minSnapVals.bbox2
+                    };
+                }
+            }
+            return minSnapPair;
+        };
+        
         if (itemsX.length > 1) {
             var minDeltaItems = _findMinDeltaItems(itemsX);
             var minDeltaXPos = minDeltaItems.minDeltaPos;
@@ -314,103 +444,13 @@
             // 3. If there are more than 1 item found with minimal pivot X offset suitable for snapping,
             // we can check Y snap offset
             if (minDeltaXPos.length > 1 || minDeltaXNeg.length > 1) {
-                var _getMinYSnapPair = function (minDeltaX) {
-                    // 4. Find X and Y offset between each pair of items with minimal pivot X offset,
-                    // and select those for which X offset inside pair is null or 0
-                    var yDists = [];
-                    for (var i = 0; i < minDeltaX.length - 1; ++i) {
-                        for (var j = i + 1; j < minDeltaX.length; ++j) {
-                            var xyOffs = minDeltaX[i].itbBox.getXYOffset(minDeltaX[j].itbBox, true, true);
-                            if (xyOffs.y && !xyOffs.x) {
-                                yDists.push({offsJfromI: xyOffs.y, i: i, j: j});
-                            }
-                        }
-                    }
-
-                    // 5. Select a pair for which the difference of absolute value of Y offset from rect to one of items
-                    // with absolute value of pair Y offset is less than snap distance,
-                    // and is minimal between all other pairs
-                    var offsIFromRect, offsJFromRect;
-                    var minSnapPair = null;
-                    for (var it = 0; it < yDists.length; ++it) {
-                        var bboxI = minDeltaX[yDists[it].i].itbBox;
-                        var bboxJ = minDeltaX[yDists[it].j].itbBox;
-                        offsIFromRect = rect.getXYOffset(bboxI, false, true);
-                        offsJFromRect = rect.getXYOffset(bboxJ, false, true);
-
-                        var delta = Math.abs(Math.abs(offsIFromRect.y) - Math.abs(yDists[it].offsJfromI));
-                        if (delta <= snapDistance && (!minSnapPair || delta < minSnapPair.absDeltaY)) {
-                            var deltaY;
-                            if (Math.abs(yDists[it].offsJfromI) >= Math.abs(offsIFromRect.y) && offsIFromRect.y > 0 ||
-                                Math.abs(yDists[it].offsJfromI) < Math.abs(offsIFromRect.y) && offsIFromRect.y < 0) {
-
-                                deltaY = -delta;
-                            } else {
-                                deltaY = delta;
-                            }
-                            minSnapPair = {
-                                absDeltaX: Math.abs(minDeltaX[0].delta),
-                                deltaX: minDeltaX[0].delta,
-                                absDeltaY: delta,
-                                deltaY: deltaY,
-                                bbox1: bboxI,
-                                bbox2: bboxJ
-                            };
-                        }
-
-                        delta = Math.abs(Math.abs(offsJFromRect.y) - Math.abs(yDists[it].offsJfromI));
-                        if (delta <= snapDistance && (!minSnapPair || delta < minSnapPair.absDeltaY)) {
-                            var deltaY;
-                            if (Math.abs(yDists[it].offsJfromI) >= Math.abs(offsJFromRect.y) && offsJFromRect.y > 0 ||
-                                Math.abs(yDists[it].offsJfromI) < Math.abs(offsJFromRect.y) && offsJFromRect.y < 0) {
-
-                                deltaY = -delta;
-                            } else {
-                                deltaY = delta;
-                            }
-                            minSnapPair = {
-                                absDeltaX: Math.abs(minDeltaX[0].delta),
-                                deltaX: minDeltaX[0].delta,
-                                absDeltaY: delta,
-                                deltaY: deltaY,
-                                bbox1: bboxI,
-                                bbox2: bboxJ
-                            };
-                        }
-
-                        delta = Math.abs(Math.abs(offsIFromRect.y) - Math.abs(offsJFromRect.y)) / 2;
-                        if (delta <= snapDistance && (!minSnapPair || delta < minSnapPair.absDeltaY)) {
-                            var deltaY;
-                            if (Math.abs(offsIFromRect.y) >= Math.abs(offsJFromRect.y) &&
-                                offsIFromRect.y < 0 && offsJFromRect.y > 0 ||
-                                Math.abs(offsIFromRect.y) <= Math.abs(offsJFromRect.y) &&
-                                offsIFromRect.y > 0 && offsJFromRect.y < 0) {
-
-                                deltaY = -delta;
-                            } else {
-                                deltaY = delta;
-                            }
-                            minSnapPair = {
-                                absDeltaX: Math.abs(minDeltaX[0].delta),
-                                deltaX: minDeltaX[0].delta,
-                                absDeltaY: delta,
-                                deltaY: deltaY,
-                                bbox1: bboxI,
-                                bbox2: bboxJ
-                            };
-                        }
-                    }
-
-                    return minSnapPair;
-                };
-
                 var minYSnapPairPos = null;
                 var minYSnapPairNeg = null;
                 if (minDeltaXPos.length > 1) {
-                    minYSnapPairPos = _getMinYSnapPair(minDeltaXPos);
+                    minYSnapPairPos = _getMinSnapPair(minDeltaXPos, true);
                 }
                 if (minDeltaXNeg.length > 1) {
-                    minYSnapPairNeg = _getMinYSnapPair(minDeltaXNeg);
+                    minYSnapPairNeg = _getMinSnapPair(minDeltaXNeg, true);
                 }
 
                 if (minYSnapPairPos && (!minYSnapPairNeg || minYSnapPairPos.absDeltaY <= minYSnapPairNeg.absDeltaY)) {
@@ -426,105 +466,16 @@
             var minDeltaYPos = minDeltaItems.minDeltaPos;
             var minDeltaYNeg = minDeltaItems.minDeltaNeg;
 
-            // 3. If there are more than 1 item found with minimal Y offset suitable for snapping, we can check X snap offset
+            // 3. If there are more than 1 item found with minimal pivot Y offset suitable for snapping,
+            // we can check X snap offset
             if (minDeltaYPos.length > 1 || minDeltaYNeg.length > 1) {
-                var _getMinXSnapPair = function (minDeltaY) {
-                    // 4. Find X and Y offset between each pair of items with minimal pivot Y offset,
-                    // and select those for which Y offset inside pair is null or 0
-                    var xDists = [];
-                    for (var i = 0; i < minDeltaY.length - 1; ++i) {
-                        for (var j = i + 1; j < minDeltaY.length; ++j) {
-                            var xyOffs = minDeltaY[i].itbBox.getXYOffset(minDeltaY[j].itbBox, true, true);
-                            if (xyOffs.x && !xyOffs.y) {
-                                xDists.push({offsJfromI: xyOffs.x, i: i, j: j});
-                            }
-                        }
-                    }
-
-                    // 5. Select a pair for which the difference of absolute value of X offset from rect to one of items
-                    // with absolute value of pair X offset is less than snap distance,
-                    // and is minimal between all other pairs
-                    var offsIFromRect, offsJFromRect;
-                    var minSnapPair = null;
-                    for (var it = 0; it < xDists.length; ++it) {
-                        var bboxI = minDeltaY[xDists[it].i].itbBox;
-                        var bboxJ = minDeltaY[xDists[it].j].itbBox;
-                        offsIFromRect = rect.getXYOffset(bboxI, true, false);
-                        offsJFromRect = rect.getXYOffset(bboxJ, true, false);
-
-                        var delta = Math.abs(Math.abs(offsIFromRect.x) - Math.abs(xDists[it].offsJfromI));
-                        if (delta <= snapDistance && (!minSnapPair || delta < minSnapPair.absDeltaX)) {
-                            var deltaX;
-                            if (Math.abs(xDists[it].offsJfromI) >= Math.abs(offsIFromRect.x) && offsIFromRect.x > 0 ||
-                                Math.abs(xDists[it].offsJfromI) < Math.abs(offsIFromRect.x) && offsIFromRect.x < 0) {
-
-                                deltaX = -delta;
-                            } else {
-                                deltaX = delta;
-                            }
-                            minSnapPair = {
-                                absDeltaX: delta,
-                                deltaX: deltaX,
-                                absDeltaY: Math.abs(minDeltaY[0].delta),
-                                deltaY: minDeltaY[0].delta,
-                                bbox1: bboxI,
-                                bbox2: bboxJ
-                            };
-                        }
-
-                        delta = Math.abs(Math.abs(offsJFromRect.x) - Math.abs(xDists[it].offsJfromI));
-                        if (delta <= snapDistance && (!minSnapPair || delta < minSnapPair.absDeltaX)) {
-                            var deltaX;
-                            if (Math.abs(xDists[it].offsJfromI) >= Math.abs(offsJFromRect.x) && offsJFromRect.x > 0 ||
-                                Math.abs(xDists[it].offsJfromI) < Math.abs(offsJFromRect.x) && offsJFromRect.x < 0) {
-
-                                deltaX = -delta;
-                            } else {
-                                deltaX = delta;
-                            }
-                            minSnapPair = {
-                                absDeltaX: delta,
-                                deltaX: deltaX,
-                                absDeltaY: Math.abs(minDeltaY[0].delta),
-                                deltaY: minDeltaY[0].delta,
-                                bbox1: bboxI,
-                                bbox2: bboxJ
-                            };
-                        }
-
-                        delta = Math.abs(Math.abs(offsIFromRect.x) - Math.abs(offsJFromRect.x)) / 2;
-                        if (delta <= snapDistance && (!minSnapPair || delta < minSnapPair.absDeltaX)) {
-                            var deltaX;
-                            if (Math.abs(offsIFromRect.x) >= Math.abs(offsJFromRect.x) &&
-                                offsIFromRect.x < 0 && offsJFromRect.x > 0 ||
-                                Math.abs(offsIFromRect.x) <= Math.abs(offsJFromRect.x) &&
-                                offsIFromRect.x > 0 && offsJFromRect.x < 0) {
-
-                                deltaX = -delta;
-                            } else {
-                                deltaX = delta;
-                            }
-                            minSnapPair = {
-                                absDeltaX: delta,
-                                deltaX: deltaX,
-                                absDeltaY: Math.abs(minDeltaY[0].delta),
-                                deltaY: minDeltaY[0].delta,
-                                bbox1: bboxI,
-                                bbox2: bboxJ
-                            };
-                        }
-                    }
-
-                    return minSnapPair;
-                };
-
                 var minXSnapPairPos = null;
                 var minXSnapPairNeg = null;
                 if (minDeltaYPos.length > 1) {
-                    minXSnapPairPos = _getMinXSnapPair(minDeltaYPos);
+                    minXSnapPairPos = _getMinSnapPair(minDeltaYPos, false);
                 }
                 if (minDeltaYNeg.length > 1) {
-                    minXSnapPairNeg = _getMinXSnapPair(minDeltaYNeg);
+                    minXSnapPairNeg = _getMinSnapPair(minDeltaYNeg, false);
                 }
 
                 if (minXSnapPairPos && (!minXSnapPairNeg || minXSnapPairPos.absDeltaX <= minXSnapPairNeg.absDeltaX)) {
@@ -545,10 +496,11 @@
                     minYSnapPair.absDeltaX == minXSnapPair.absDeltaY && minYSnapPair.absDeltaY <= minXSnapPair.absDeltaX)) {
 
                 newRect = rect.translated(minYSnapPair.deltaX, minYSnapPair.deltaY);
-                guides = this.getXDistGuides(
+                guides = this.getDistGuides(
                     minYSnapPair.bbox1,
                     minYSnapPair.bbox2,
-                    newRect);
+                    newRect,
+                    true);
 
                 if (guides) {
                     for (var i = 0; i < guides.length; ++i) {
@@ -557,10 +509,11 @@
                 }
             } else if (minXSnapPair) {
                 newRect = rect.translated(minXSnapPair.deltaX, minXSnapPair.deltaY);
-                guides = this.getYDistGuides(
+                guides = this.getDistGuides(
                     minXSnapPair.bbox1,
                     minXSnapPair.bbox2,
-                    newRect);
+                    newRect,
+                    false);
 
                 if (guides) {
                     for (var i = 0; i < guides.length; ++i) {
@@ -574,41 +527,56 @@
     };
 
     /**
-     * Finds and returns distance guides coordinates between three X-aligned (may be aligned just 1 or two pivots) rectangles
+     * Finds and returns distance guides coordinates between three X-aligned or
+     * Y-aligned (may be aligned just 1 or two pivots) rectangles
      * @param {GRect} bbox1
      * @param {GRect} bbox2
      * @param {GRect} bbox3
+     * @param {Boolean} xAligned - indicates if some pivots of the rectangles are aligned by X value,
+     * otherwise, consider some pivots of the rectangles are aligned by Y value
      * @return {Array{Array{GPoint}}} array of guide lines
      */
-    GBBoxGuide.prototype.getXDistGuides = function (bbox1, bbox2, bbox3) {
+    GBBoxGuide.prototype.getDistGuides = function (bbox1, bbox2, bbox3, xAligned) {
+        // An algorithm for X-aligned rectangles
         // 1. Order bboxes by Y val
         // 2. Between each pair of the two nearest bboxes iterate over bbox1 bottom pivots and bbox2 top pivots
         // and make guide, where X match
 
         var guides = [];
-        var b1y1 = bbox1.getY();
-        var b1y2 = b1y1 + bbox1.getHeight();
-        var b2y1 = bbox2.getY();
-        var b2y2 = b2y1 + bbox2.getHeight();
-        var b3y1 = bbox3.getY();
-        var b3y2 = b3y1 + bbox3.getHeight();
+        var b11, b12, b21, b22, b31, b32;
+        if (xAligned) {
+            b11 = bbox1.getY();
+            b12 = b11 + bbox1.getHeight();
+            b21 = bbox2.getY();
+            b22 = b21 + bbox2.getHeight();
+            b31 = bbox3.getY();
+            b32 = b31 + bbox3.getHeight();
+        } else {
+            b11 = bbox1.getX();
+            b12 = b11 + bbox1.getWidth();
+            b21 = bbox2.getX();
+            b22 = b21 + bbox2.getWidth();
+            b31 = bbox3.getX();
+            b32 = b31 + bbox3.getWidth();
+        }
+
         var bboxes = [];
 
-        // 1. Order bboxes by Y val
-        // Bboxes have some non-zero Y offset from each other, as this was checked earlier, when selecting them
+        // 1. Order bboxes by Y (or X) val
+        // Bboxes have some non-zero Y (or X) offset from each other, as this was checked earlier, when selecting them
         // So let's take it into account to make ordering easy
-        if (b1y2 < b2y1 && b1y2 < b3y1) {
+        if (b12 < b21 && b12 < b31) {
             bboxes.push(bbox1);
-            if (b2y2 < b3y1) {
+            if (b22 < b31) {
                 bboxes.push(bbox2);
                 bboxes.push(bbox3);
             } else {
                 bboxes.push(bbox3);
                 bboxes.push(bbox2);
             }
-        } else if (b2y2 < b1y1 && b2y2 < b3y1) {
+        } else if (b22 < b11 && b22 < b31) {
             bboxes.push(bbox2);
-            if (b1y2 < b3y1) {
+            if (b12 < b31) {
                 bboxes.push(bbox1);
                 bboxes.push(bbox3);
             } else {
@@ -617,7 +585,7 @@
             }
         } else {
             bboxes.push(bbox3);
-            if (b1y2 < b2y1) {
+            if (b12 < b21) {
                 bboxes.push(bbox1);
                 bboxes.push(bbox2);
             } else {
@@ -626,111 +594,36 @@
             }
         }
 
-        // 2. Between each pair of the two nearest bboxes iterate over bbox1 bottom pivots and bbox2 top pivots
-        // and make guide, where X match
+        // 2. Between each pair of the two nearest bboxes iterate over bbox1 bottom (or right) pivots
+        // and bbox2 top (or left) pivots, and make guide, where X (or Y) match
         for (var i = 0; i < bboxes.length - 1; ++i) {
             var bb1 = bboxes[i];
             var bb2 = bboxes[i + 1];
 
             var pivots1 = [];
-            pivots1.push(bb1.getSide(GRect.Side.BOTTOM_LEFT));
-            pivots1.push(bb1.getSide(GRect.Side.BOTTOM_CENTER));
-            pivots1.push(bb1.getSide(GRect.Side.BOTTOM_RIGHT));
-
             var pivots2 = [];
-            pivots2.push(bb2.getSide(GRect.Side.TOP_LEFT));
-            pivots2.push(bb2.getSide(GRect.Side.TOP_CENTER));
-            pivots2.push(bb2.getSide(GRect.Side.TOP_RIGHT));
+            if (xAligned) {
+                pivots1.push(bb1.getSide(GRect.Side.BOTTOM_LEFT));
+                pivots1.push(bb1.getSide(GRect.Side.BOTTOM_CENTER));
+                pivots1.push(bb1.getSide(GRect.Side.BOTTOM_RIGHT));
+
+                pivots2.push(bb2.getSide(GRect.Side.TOP_LEFT));
+                pivots2.push(bb2.getSide(GRect.Side.TOP_CENTER));
+                pivots2.push(bb2.getSide(GRect.Side.TOP_RIGHT));
+            } else { // yAligned
+                pivots1.push(bb1.getSide(GRect.Side.TOP_RIGHT));
+                pivots1.push(bb1.getSide(GRect.Side.RIGHT_CENTER));
+                pivots1.push(bb1.getSide(GRect.Side.BOTTOM_RIGHT));
+
+                pivots2.push(bb2.getSide(GRect.Side.TOP_LEFT));
+                pivots2.push(bb2.getSide(GRect.Side.LEFT_CENTER));
+                pivots2.push(bb2.getSide(GRect.Side.BOTTOM_LEFT));
+            }
             for (var j = 0; j < pivots1.length; ++j) {
                 var piv1 = pivots1[j];
                 for (var k = 0; k < pivots2.length; ++k) {
                     var piv2 = pivots2[k];
-                    if (piv1.getX() === piv2.getX()) {
-                        var guide = [];
-                        guide.push(piv1);
-                        guide.push(piv2);
-                        guides.push(guide);
-                    }
-                }
-            }
-        }
-
-        return guides.length ? guides : null;
-    };
-
-    /**
-     * Finds and returns distance guides coordinates between three Y-aligned (may be aligned just 1 or two pivots) rectangles
-     * @param {GRect} bbox1
-     * @param {GRect} bbox2
-     * @param {GRect} bbox3
-     * @return {Array{Array{GPoint}}} array of guide lines
-     */
-    GBBoxGuide.prototype.getYDistGuides = function (bbox1, bbox2, bbox3) {
-        // 1. Order bboxes by X val
-        // 2. Between each pair of the two nearest bboxes iterate over bbox1 right pivots and bbox2 left pivots
-        // and make guide, where Y match
-
-        var guides = [];
-        var b1x1 = bbox1.getX();
-        var b1x2 = b1x1 + bbox1.getWidth();
-        var b2x1 = bbox2.getX();
-        var b2x2 = b2x1 + bbox2.getWidth();
-        var b3x1 = bbox3.getX();
-        var b3x2 = b3x1 + bbox3.getWidth();
-        var bboxes = [];
-
-        // 1. Order bboxes by X val
-        // Bboxes have some non-zero X offset from each other, as this was checked earlier, when selecting them
-        // So let's take it into account to make ordering easy
-        if (b1x2 < b2x1 && b1x2 < b3x1) {
-            bboxes.push(bbox1);
-            if (b2x2 < b3x1) {
-                bboxes.push(bbox2);
-                bboxes.push(bbox3);
-            } else {
-                bboxes.push(bbox3);
-                bboxes.push(bbox2);
-            }
-        } else if (b2x2 < b1x1 && b2x2 < b3x1) {
-            bboxes.push(bbox2);
-            if (b1x2 < b3x1) {
-                bboxes.push(bbox1);
-                bboxes.push(bbox3);
-            } else {
-                bboxes.push(bbox3);
-                bboxes.push(bbox1);
-            }
-        } else {
-            bboxes.push(bbox3);
-            if (b1x2 < b2x1) {
-                bboxes.push(bbox1);
-                bboxes.push(bbox2);
-            } else {
-                bboxes.push(bbox2);
-                bboxes.push(bbox1);
-            }
-        }
-
-        // 2. Between each pair of the two nearest bboxes iterate over bbox1 right pivots and bbox2 left pivots
-        // and make guide, where Y match
-        for (var i = 0; i < bboxes.length - 1; ++i) {
-            var bb1 = bboxes[i];
-            var bb2 = bboxes[i + 1];
-
-            var pivots1 = [];
-            pivots1.push(bb1.getSide(GRect.Side.TOP_RIGHT));
-            pivots1.push(bb1.getSide(GRect.Side.RIGHT_CENTER));
-            pivots1.push(bb1.getSide(GRect.Side.BOTTOM_RIGHT));
-
-            var pivots2 = [];
-            pivots2.push(bb2.getSide(GRect.Side.TOP_LEFT));
-            pivots2.push(bb2.getSide(GRect.Side.LEFT_CENTER));
-            pivots2.push(bb2.getSide(GRect.Side.BOTTOM_LEFT));
-            for (var j = 0; j < pivots1.length; ++j) {
-                var piv1 = pivots1[j];
-                for (var k = 0; k < pivots2.length; ++k) {
-                    var piv2 = pivots2[k];
-                    if (piv1.getY() === piv2.getY()) {
+                    if (xAligned && piv1.getX() === piv2.getX() || piv1.getY() === piv2.getY()) {
                         var guide = [];
                         guide.push(piv1);
                         guide.push(piv2);
