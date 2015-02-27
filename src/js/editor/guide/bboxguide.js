@@ -186,12 +186,13 @@
     /**
      * Checks if distance guides should be drawn, and returns them in resX and resY arrays
      * @param {GRect} [rect] the rectangle to map
-     * @param {Array{Array{GPoint}}} [resX] filled with X visual lines if distance guides are applicable
-     * @param {Array{Array{GPoint}}} [resY] filled with Y visual lines if distance guides are applicable
      * @param {Number} [snapDistance]
+     * @param {Array{Number}} [distDeltas] filled with X and Y snapping delta values if distance guides are applicable
+     * @param {Array{Array{GPoint}}} [visDistX] filled with X visual lines if distance guides are applicable
+     * @param {Array{Array{GPoint}}} [visDistY] filled with Y visual lines if distance guides are applicable
      * @returns {GRect} a mapped rectangle
      */
-    GBBoxGuide.prototype.checkDistanceGuidesMapping = function (rect, resX, resY, snapDistance) {
+    GBBoxGuide.prototype.checkDistanceGuidesMapping = function (rect, snapDistance, distDeltas, visDistX, visDistY) {
         // An algorithm for X trivial snapping and Y distance snapping
         // (an algorithm for Y trivial snapping and X distance snapping is analogous):
         // 1. Select items, which may be used for X snapping
@@ -496,6 +497,8 @@
                     minYSnapPair.absDeltaX == minXSnapPair.absDeltaY && minYSnapPair.absDeltaY <= minXSnapPair.absDeltaX)) {
 
                 newRect = rect.translated(minYSnapPair.deltaX, minYSnapPair.deltaY);
+                distDeltas[0] = minYSnapPair.deltaX;
+                distDeltas[1] = minYSnapPair.deltaY;
                 guides = this.getDistGuides(
                     minYSnapPair.bbox1,
                     minYSnapPair.bbox2,
@@ -504,11 +507,13 @@
 
                 if (guides) {
                     for (var i = 0; i < guides.length; ++i) {
-                        resX.push(guides[i]);
+                        visDistX.push(guides[i]);
                     }
                 }
             } else if (minXSnapPair) {
                 newRect = rect.translated(minXSnapPair.deltaX, minXSnapPair.deltaY);
+                distDeltas[0] = minXSnapPair.deltaX;
+                distDeltas[1] = minXSnapPair.deltaY;
                 guides = this.getDistGuides(
                     minXSnapPair.bbox1,
                     minXSnapPair.bbox2,
@@ -517,7 +522,7 @@
 
                 if (guides) {
                     for (var i = 0; i < guides.length; ++i) {
-                        resY.push(guides[i]);
+                        visDistY.push(guides[i]);
                     }
                 }
             }
