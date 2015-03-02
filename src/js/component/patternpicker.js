@@ -83,7 +83,7 @@
                 // or wait for a manual call to the open function
                 autoOpen: true,
                 // Whether to show the picker modal or not
-                modal: false,
+                modal: false
                 // see options of gPatternTarget
             }, options);
 

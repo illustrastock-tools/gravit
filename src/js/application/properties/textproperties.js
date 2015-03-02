@@ -232,6 +232,14 @@
                             self._updateProperties();
                         }
                     });
+            } else if (property === '_fpt') {
+                return $('<div></div>')
+                    .attr('data-property', property)
+                    .gPatternPicker()
+                    .gPatternPicker('types', [null, GColor])
+                    .on('patternchange', function (evt, pattern) {
+                        self._assignProperty(property, pattern);
+                    });
             } else {
                 throw new Error('Unknown input property: ' + property);
             }
@@ -303,6 +311,23 @@
                     })
                     // TODO : I18N
                     .attr('title', 'Line Height')))
+            .append($('<label></label>')
+                .css({
+                    'position': 'absolute',
+                    'top': '30px',
+                    'left': '170px'
+                })
+                .append($('<span></span>')
+                    .addClass('gicon-fill')
+                    .css({
+                        'width': '16px',
+                        'text-align': 'center'
+                    }))
+                .append(_createInput('_fpt')
+                    .css({
+                        'margin-left': '5px',
+                        'width': '20px'
+                    })))
             .append($('<div></div>')
                 .css({
                     'position': 'absolute',
@@ -534,6 +559,8 @@
         this._panel.find('input[data-property="_tcs"]').val(
             this._document.getScene().pointToString(propertySource.getProperty('_tcs')));
 
+        this._panel.find('div[data-property="_fpt"]')
+            .gPatternPicker('swatches', this._document.getScene().getWorkspace().getSwatches());
 
         // Paragraph
         this._panel.find('input[data-property="_pcc"]').val(propertySource.getProperty('_pcc'));
