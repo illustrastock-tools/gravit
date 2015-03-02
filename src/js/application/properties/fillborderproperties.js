@@ -400,34 +400,7 @@
         editor.beginTransaction();
         try {
             for (var i = 0; i < this._elements.length; ++i) {
-                var element = this._elements[i];
-                if (element instanceof GText) {
-                    if (properties.length !== values.length) {
-                        throw new Error('Properties length does not match values length');
-                    }
-                    var colorProperties = [];
-                    var colorValues = [];
-                    var otherProperties = properties.slice(0);
-                    var otherValues = values.slice(0);
-                    for (var j = otherProperties.length; j > 0; --j) {
-                        if (otherProperties[j-1] === '_fpt' && (otherValues[j-1] instanceof GColor)) {
-                        // TODO: Lets add '_bpt' later if needed
-                            colorProperties.push(otherProperties[j-1]);
-                            colorValues.push(otherValues[j-1]);
-                            otherProperties.splice(j-1, 1);
-                            otherValues.splice(j-1, 1);
-                        }
-                    }
-                    if (colorProperties.length) {
-                        var textEditor = GElementEditor.getEditor(element);
-                        textEditor.setProperties(colorProperties, colorValues);
-                    }
-                    if (otherProperties.length) {
-                        element.setProperties(otherProperties, otherValues);
-                    }
-                } else {
-                    element.setProperties(properties, values);
-                }
+                this._elements[i].setProperties(properties, values);
             }
         } finally {
             // TODO : I18N

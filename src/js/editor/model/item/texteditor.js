@@ -99,7 +99,7 @@
                 textProperties.push(properties[i]);
                 textValues.push(values[i]);
             } else if (GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties.hasOwnProperty(properties[i]) ||
-                properties[i] === '_fpt') {
+                properties[i] === '_fc') {
 
                 blockProperties.push(properties[i]);
                 blockValues.push(values[i]);

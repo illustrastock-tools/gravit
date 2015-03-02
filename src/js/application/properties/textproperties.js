@@ -232,7 +232,7 @@
                             self._updateProperties();
                         }
                     });
-            } else if (property === '_fpt') {
+            } else if (property === '_fc') {
                 return $('<div></div>')
                     .attr('data-property', property)
                     .gPatternPicker()
@@ -323,7 +323,7 @@
                         'width': '16px',
                         'text-align': 'center'
                     }))
-                .append(_createInput('_fpt')
+                .append(_createInput('_fc')
                     .css({
                         'margin-left': '5px',
                         'width': '20px'
@@ -559,7 +559,7 @@
         this._panel.find('input[data-property="_tcs"]').val(
             this._document.getScene().pointToString(propertySource.getProperty('_tcs')));
 
-        this._panel.find('div[data-property="_fpt"]')
+        this._panel.find('div[data-property="_fc"]')
             .gPatternPicker('swatches', this._document.getScene().getWorkspace().getSwatches());
 
         // Paragraph

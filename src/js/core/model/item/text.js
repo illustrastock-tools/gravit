@@ -150,7 +150,7 @@
                         break;
                 }
             }
-        } else if (property === '_fpt') {
+        } else if (property === '_fc') {
             css['color'] = value !== null ? value.toScreenCSS() : '';
         } else if (property === '_tcs') {
             css['letter-spacing'] = value !== null ? value + 'px' : '';
@@ -203,7 +203,7 @@
             } else if (css['font-style'] === 'italic') {
                 return GFont.Style.Italic;
             }
-        } else if (property === '_fpt') {
+        } else if (property === '_fc') {
             var cssStringColor = css['color'];
             if (cssStringColor) {
                 var value = GRGBColor.fromCSSColor(cssStringColor);
@@ -278,7 +278,7 @@
         return this._propertiesToCss(css,
             $.extend({},
                 GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties,
-                {'_fpt': null}), // TODO: Add all Fill and Border visualProperties later if needed
+                {'_fc': null}),
             GText.Block.propertyToCss);
     };
 
@@ -289,7 +289,7 @@
         this._cssToProperties(css,
             $.extend({},
                 GStylable.PropertySetInfo[GStylable.PropertySet.Text].geometryProperties,
-                {'_fpt': null}), // TODO: Add all Fill and Border visualProperties later if needed
+                {'_fc': null}),
             GText.Block.cssToProperty);
     };
 
@@ -786,7 +786,17 @@
                     var fontVariant = ifFont.getVariant(fontFamily, fontStyle, fontWeight);
                     var baseline = ifFont.getGlyphBaseline(fontFamily, fontVariant, fontSize);
 
-                    var charColor = GText.Block.cssToProperty('_fpt', css);
+                    var charColor = GText.Block.cssToProperty('_fc', css);
+                    if (charColor) {
+                        var fillPattern = this.getProperty('_fpt');
+                        var fptValue = null;
+                        if (fillPattern && fillPattern instanceof GColor) {
+                            fptValue = fillPattern;
+                        }
+                        if (fptValue && GRGBColor.equals(charColor, fptValue)) {
+                            charColor = null;
+                        }
+                    }
 
                     if (char !== ' ') {
                         if (!colorChunk ||
