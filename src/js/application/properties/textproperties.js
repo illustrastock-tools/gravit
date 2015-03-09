@@ -559,8 +559,18 @@
         this._panel.find('input[data-property="_tcs"]').val(
             this._document.getScene().pointToString(propertySource.getProperty('_tcs')));
 
-        this._panel.find('div[data-property="_fc"]')
-            .gPatternPicker('swatches', this._document.getScene().getWorkspace().getSwatches());
+        var fcval = propertySource.getProperty('_fc');
+        if (!fcval) {
+            fcval = propertySource.getProperty('_fpt');
+        }
+        if (fcval) {
+            this._panel.find('div[data-property="_fc"]')
+                .gPatternPicker('value', fcval)
+                .gPatternPicker('swatches', this._document.getScene().getWorkspace().getSwatches());
+        } else {
+            this._panel.find('div[data-property="_fc"]')
+                .gPatternPicker('swatches', this._document.getScene().getWorkspace().getSwatches());
+        }
 
         // Paragraph
         this._panel.find('input[data-property="_pcc"]').val(propertySource.getProperty('_pcc'));

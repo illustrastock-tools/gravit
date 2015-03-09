@@ -206,6 +206,11 @@
 
                 // Trigger selection changed event to update everything
                 this._triggerSelectionChanged();
+
+                if (this._savedSelection) {
+                    rangy.restoreSelection(this._savedSelection);
+                    this._savedSelection = rangy.saveSelection();
+                }
             }.bind(this), 0);
         } else {
             // Apply to outer element
